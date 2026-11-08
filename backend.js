@@ -152,10 +152,12 @@
         return;
       }
       state.found.add(result.word);
+      celebrateFoundWord(cells.map(p=>({row:p.r,col:p.c})));
       state.score=result.score;
       $ui("game-message").textContent=state.language==="vi"?"Tìm thấy từ!":"Word found!";
       playTone(660);
       updateHUD();
+      showLeaderboard();
     }catch(error){
       if(roundId===targetRoundId)$ui("game-message").textContent=error.message;
     }
@@ -204,40 +206,20 @@
 
   async function showLeaderboard(){
     const requestId=++leaderboardRequest;
-    const list=$ui("leaderboard-list");
-    list.replaceChildren();
+    const lists=[$ui("leaderboard-list"),$ui("inline-leaderboard-list")].filter(Boolean);
+    lists.forEach(list=>{list.replaceChildren();});
     const vi=state.language==="vi";
-    if(!client){
-      const li=document.createElement("li");li.textContent=vi?"Supabase chưa được cấu hình.":"Supabase is not configured.";list.appendChild(li);return;
-    }
-    const loading=document.createElement("li");
-    loading.textContent=vi?"Đang tải bảng xếp hạng...":"Loading leaderboard...";
-    list.appendChild(loading);
-    list.setAttribute("aria-busy","true");
-    const language=$ui("leaderboard-language").value;
-    const difficulty=$ui("leaderboard-difficulty").value;
-    const {data,error}=await client.rpc("get_alice_leaderboard",{
-      p_language:language,p_difficulty:difficulty,p_limit:20
-    });
+    const renderMessage=message=>lists.forEach(list=>{const li=document.createElement("li");li.textContent=message;list.appendChild(li);});
+    if(!client){renderMessage(vi?"Supabase chưa được cấu hình.":"Supabase is not configured.");return;}
+    lists.forEach(list=>{const li=document.createElement("li");li.textContent=vi?"Đang tải bảng xếp hạng...":"Loading leaderboard...";list.appendChild(li);list.setAttribute("aria-busy","true");});
+    const language=$ui("inline-leaderboard-language")?.value || $ui("leaderboard-language").value;
+    const difficulty=$ui("inline-leaderboard-difficulty")?.value || $ui("leaderboard-difficulty").value;
+    const {data,error}=await client.rpc("get_alice_leaderboard",{p_language:language,p_difficulty:difficulty,p_limit:20});
     if(requestId!==leaderboardRequest)return;
-    list.removeAttribute("aria-busy");
-    list.replaceChildren();
-    if(error){
-      const li=document.createElement("li");
-      li.textContent=(vi?"Không tải được bảng xếp hạng: ":"Could not load leaderboard: ")+error.message;
-      list.appendChild(li);return;
-    }
-    if(!data?.length){
-      const li=document.createElement("li");li.textContent=vi?"Chưa có dữ liệu.":"No scores yet.";lists.forEach(list=>list.appendChild(li.cloneNode(true)));return;
-    }
-    data.forEach(row=>{
-      const li=document.createElement("li");
-      const name=document.createElement("span");
-      const score=document.createElement("strong");
-      name.textContent=row.display_name;
-      score.textContent=String(row.score);
-      li.append(name,score);list.appendChild(li);
-    });
+    lists.forEach(list=>{list.removeAttribute("aria-busy");list.replaceChildren();});
+    if(error){renderMessage((vi?"Không tải được bảng xếp hạng: ":"Could not load leaderboard: ")+error.message);return;}
+    if(!data?.length){renderMessage(vi?"Chưa có dữ liệu.":"No scores yet.");return;}
+    data.forEach(row=>lists.forEach(list=>{const li=document.createElement("li");const name=document.createElement("span");const score=document.createElement("strong");name.textContent=row.display_name;score.textContent=String(row.score);li.append(name,score);list.appendChild(li);}));
   }
 
   document.addEventListener("DOMContentLoaded",async()=>{
@@ -272,6 +254,8 @@
     });
     $ui("leaderboard-language").addEventListener("change",showLeaderboard);
     $ui("leaderboard-difficulty").addEventListener("change",showLeaderboard);
+    $ui("inline-leaderboard-language").addEventListener("change",showLeaderboard);
+    $ui("inline-leaderboard-difficulty").addEventListener("change",showLeaderboard);
     $ui("close-leaderboard").addEventListener("click",()=>$ui("leaderboard-dialog").close());
 
     if(!hasConfig()){
@@ -298,5 +282,6 @@
     }
     state.backendReady=true;
     $ui("start-game").disabled=!state.dictionaryReady;
+    showLeaderboard();
   });
 })();
