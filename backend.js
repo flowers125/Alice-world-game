@@ -15,6 +15,7 @@
   let claimQueue = Promise.resolve();
   let finishPromise = null;
   let startingRound = false;
+  let leaderboardRequest = 0;
 
   async function callGame(action, payload = {}) {
     const {data,error} = await client.functions.invoke("alice-game",{body:{action,...payload}});
@@ -170,6 +171,7 @@
   }
 
   async function showLeaderboard(){
+    const requestId=++leaderboardRequest;
     const list=$ui("leaderboard-list");
     list.replaceChildren();
     const vi=state.language==="vi";
@@ -185,6 +187,7 @@
     const {data,error}=await client.rpc("get_alice_leaderboard",{
       p_language:language,p_difficulty:difficulty,p_limit:20
     });
+    if(requestId!==leaderboardRequest)return;
     list.removeAttribute("aria-busy");
     list.replaceChildren();
     if(error){
