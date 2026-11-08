@@ -163,16 +163,28 @@
   async function showLeaderboard(){
     const list=$ui("leaderboard-list");
     list.replaceChildren();
+    const vi=state.language==="vi";
     if(!client){
-      const li=document.createElement("li");li.textContent="Supabase chưa được cấu hình.";list.appendChild(li);return;
+      const li=document.createElement("li");li.textContent=vi?"Supabase chưa được cấu hình.":"Supabase is not configured.";list.appendChild(li);return;
     }
+    const loading=document.createElement("li");
+    loading.textContent=vi?"Đang tải bảng xếp hạng...":"Loading leaderboard...";
+    list.appendChild(loading);
+    list.setAttribute("aria-busy","true");
     const language=$ui("leaderboard-language").value;
     const difficulty=$ui("leaderboard-difficulty").value;
     const {data,error}=await client.rpc("get_alice_leaderboard",{
       p_language:language,p_difficulty:difficulty,p_limit:20
     });
-    if(error||!data?.length){
-      const li=document.createElement("li");li.textContent=state.language==="vi"?"Chưa có dữ liệu.":"No scores yet.";list.appendChild(li);return;
+    list.removeAttribute("aria-busy");
+    list.replaceChildren();
+    if(error){
+      const li=document.createElement("li");
+      li.textContent=(vi?"Không tải được bảng xếp hạng: ":"Could not load leaderboard: ")+error.message;
+      list.appendChild(li);return;
+    }
+    if(!data?.length){
+      const li=document.createElement("li");li.textContent=vi?"Chưa có dữ liệu.":"No scores yet.";list.appendChild(li);return;
     }
     data.forEach(row=>{
       const li=document.createElement("li");
