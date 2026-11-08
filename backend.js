@@ -32,14 +32,17 @@
     $ui("sign-out").hidden=!signedIn;
     $ui("profile-form").hidden=!signedIn;
     if(!signedIn){
+      $ui("display-name").value="";
       $ui("account-status").textContent=state.language==="vi"
         ?"Đang chơi với tư cách khách · Điểm không được lưu online."
         :"Playing as guest · Scores are not saved online.";
       return;
     }
+    $ui("display-name").value="";
     const {data,error}=await client.from("profiles").select("display_name").eq("id",session.user.id).maybeSingle();
     if(error) console.error(error);
     if(data?.display_name) $ui("display-name").value=data.display_name;
+    else if(session.user.user_metadata?.full_name) $ui("display-name").value=String(session.user.user_metadata.full_name).slice(0,24);
     $ui("account-status").textContent=state.language==="vi"?"Đã đăng nhập Google.":"Signed in with Google.";
   }
 
