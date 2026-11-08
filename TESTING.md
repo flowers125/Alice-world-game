@@ -31,7 +31,7 @@ Very Hard mode:
 - [ ] Sign out and confirm the game returns to guest mode.
 
 ## Security checks
-- [ ] Browser roles cannot directly read `game_rounds`, `round_words`, or `personal_bests`.
+- [ ] Browser roles cannot directly read `dictionary_words`, `game_rounds`, `round_words`, `personal_bests`, or the `leaderboard` view.
 - [ ] Guest leaderboard requests use only the curated leaderboard RPC; no personal or round data is exposed.
 - [ ] Edge Function rejects requests without a valid user session.
 
