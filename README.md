@@ -41,11 +41,15 @@ The database stores profiles, dictionary words, rounds, found words, and persona
 
 ### Google sign-in setup
 
-To enable Google login:
-1. Create a Google OAuth web client in Google Cloud Console.
-2. In Supabase Authentication → Providers → Google, enable Google and enter the OAuth Client ID and Client Secret.
-3. In Supabase Authentication → URL Configuration, add the deployed site URL to the allowed redirect URLs.
-4. Keep the OAuth client secret in Supabase only; never commit it to this repository.
+To enable Google login after Cloudflare Pages has a production URL:
+1. Create a Google OAuth client with application type **Web application** in Google Cloud Console.
+2. Add the deployed Cloudflare Pages origin (for example, `https://your-project.pages.dev`) to **Authorized JavaScript origins**.
+3. Add this Supabase callback to **Authorized redirect URIs**: `https://drxdsooffyadkjrbchxx.supabase.co/auth/v1/callback`. Confirm it matches the callback shown in Supabase → Authentication → Providers → Google.
+4. In Supabase Authentication → Providers → Google, enable Google and enter the OAuth Client ID and Client Secret.
+5. In Supabase Authentication → URL Configuration, set the Site URL to the deployed site origin and add that same origin to the allowed Redirect URLs.
+6. Keep the OAuth client secret in Supabase only; never commit it to this repository.
+
+The Google Client ID/Secret and the final Cloudflare Pages domain are not available in this repository, so these account-level settings must be completed in their respective dashboards.
 
 Until Google OAuth is configured, users can play as guests. Guest scores are local and are not submitted to the online leaderboard.
 
