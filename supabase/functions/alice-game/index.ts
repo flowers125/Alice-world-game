@@ -87,10 +87,10 @@ Deno.serve(async (req: Request) => {
 
     if (action === "start") {
       const language = body.language === "en" ? "en" : "vi";
-      const difficulty = body.difficulty === "very-hard" ? "very-hard" : "normal";
+      const difficulty = body.difficulty === "very-hard" ? "very-hard" : body.difficulty === "very-easy" ? "very-easy" : "normal";
       const {count:dictionaryCount,error:countError} = await admin
         .from("dictionary_words").select("id",{count:"exact",head:true})
-        .eq("language",language).eq("is_active",true);
+        .eq("language",language).eq("is_active",true).not("word","ilike","% %");
       if (countError) throw countError;
       if (!dictionaryCount) return reply({error:"Dictionary is empty"},503);
 
@@ -104,7 +104,7 @@ Deno.serve(async (req: Request) => {
         const from = startOffset+offset;
         const to = Math.min(startOffset+sampleSize-1,from+999);
         const {data,error} = await admin.from("dictionary_words")
-          .select("word,normalized").eq("language",language).eq("is_active",true)
+          .select("word,normalized").eq("language",language).eq("is_active",true).not("word","ilike","% %")
           .order("normalized").range(from,to);
         if (error) throw error;
         dictionary.push(...(data||[]));
