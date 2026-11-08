@@ -207,8 +207,8 @@
     event.preventDefault();
     if(!session)return;
     const displayName=$ui("display-name").value.trim();
-    if(displayName.length<2||displayName.length>24){
-      $ui("account-status").textContent=state.language==="vi"?"Tên phải từ 2–24 ký tự.":"Name must be 2–24 characters.";
+    if(displayName.length<2||displayName.length>20){
+      $ui("account-status").textContent=state.language==="vi"?"Tên phải từ 2–20 ký tự.":"Name must be 2–20 characters.";
       return;
     }
     const {data,error}=await client.from("profiles")
