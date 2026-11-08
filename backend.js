@@ -209,6 +209,8 @@
   }
 
   document.addEventListener("DOMContentLoaded",async()=>{
+    state.backendReady=false;
+    $ui("start-game").disabled=true;
     const oldStart=$ui("start-game");
     const newStart=oldStart.cloneNode(true);
     oldStart.replaceWith(newStart);
@@ -231,6 +233,8 @@
     if(!hasConfig()){
       $ui("google-sign-in").disabled=true;
       $ui("account-status").textContent=state.language==="vi"?"Chế độ khách · Chưa cấu hình Supabase.":"Guest mode · Supabase is not configured.";
+      state.backendReady=true;
+      $ui("start-game").disabled=!state.dictionaryReady;
       return;
     }
     client=window.supabase.createClient(window.ALICE_SUPABASE_URL,window.ALICE_SUPABASE_ANON_KEY);
@@ -238,5 +242,7 @@
     const {data}=await client.auth.getSession();
     await updateAccount(data.session);
     client.auth.onAuthStateChange((_event,nextSession)=>{setTimeout(()=>updateAccount(nextSession),0);});
+    state.backendReady=true;
+    $ui("start-game").disabled=!state.dictionaryReady;
   });
 })();
