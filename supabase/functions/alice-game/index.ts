@@ -142,14 +142,9 @@ Deno.serve(async (req: Request) => {
       const targets = (round.target_words || []) as string[];
       const matched = targets.find(w=>normalize(w)===formed || normalize(w)===reverse);
       if (!matched) return reply({valid:false,reason:"not_a_hidden_word"},200);
-      const {count:foundCount,error:countError} = await admin.from("round_words")
-        .select("id",{count:"exact",head:true}).eq("round_id",roundId);
-      if (countError) throw countError;
-      const nextCount=(foundCount||0)+1;
-      const hard=round.difficulty==="very-hard";
-      const points=totalScore(nextCount,hard)-totalScore(nextCount-1,hard);
+      // The RPC locks the round and calculates the authoritative score atomically.
       const {data:record,error:recordError} = await admin.rpc("alice_record_word",{
-        p_round_id:roundId,p_user_id:user.id,p_normalized:normalize(matched),p_points:points
+        p_round_id:roundId,p_user_id:user.id,p_normalized:normalize(matched),p_points:0
       });
       if(recordError) throw recordError;
       if(!record?.ok) return reply({valid:false,reason:record?.reason||"already_found"},200);
