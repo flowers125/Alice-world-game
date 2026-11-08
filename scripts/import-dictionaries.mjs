@@ -18,7 +18,7 @@ for (const [language, path] of sources) {
   const words = [...new Set(raw.split(/\r?\n/)
     .map(value => value.normalize("NFC").trim().toLocaleLowerCase(language))
     .filter(Boolean)
-    .filter(word => /^[\p{L} ]+$/u.test(word))
+    .filter(word => /^[\p{L}]+$/u.test(word))
     .filter(word => {
       const normalized = word.replace(/\s+/g, "");
       return normalized.length >= 2 && normalized.length <= 10;
