@@ -65,7 +65,7 @@ select {
   display: flex;
   align-items: center;
   justify-content: center;
-  background: #eeeaf7;
+  background: var(--cell, #eeeaf7);
   border-radius: 6px;
   font-size: clamp(12px, 3vw, 22px);
   font-weight: bold;
