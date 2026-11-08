@@ -64,13 +64,23 @@ function makeBoard(words: {word:string;normalized:string}[], language: string, d
     { min: 6, max: 7, count: difficulty === "very-hard" ? 9 : 8 },
     { min: 8, max: 20, count: difficulty === "very-hard" ? 9 : 8 }
   ];
-  const selected:any[] = [];
-  const used = new Set<string>();
+  const preferred = language === "vi"
+    ? ["cá","cơm","đèn","thuyền","hoa","lá","sữa","nhà"]
+    : ["say","no","yes","bad"];
+  const selected:any[] = preferred
+    .map(word => eligible.find((item:any) => normalize(item.normalized) === normalize(word)))
+    .filter(Boolean);
+  const used = new Set<string>(selected.map((item:any) => normalize(item.normalized)));
   for (const bucket of buckets) {
+    const alreadyChosen = selected.filter((item:any) => {
+      const length = Array.from(normalize(item.normalized)).length;
+      return length >= bucket.min && length <= bucket.max;
+    }).length;
+    const needed = Math.max(0,bucket.count-alreadyChosen);
     const group = shuffle(eligible.filter((item:any) => {
       const length = Array.from(normalize(item.normalized)).length;
       return length >= bucket.min && length <= bucket.max && !used.has(normalize(item.normalized));
-    })).slice(0,bucket.count);
+    })).slice(0,needed);
     for (const item of group) {
       const key = normalize(item.normalized);
       if (!used.has(key)) { selected.push(item); used.add(key); }
@@ -140,6 +150,16 @@ Deno.serve(async (req: Request) => {
         if (!data?.length || data.length<to-from+1) break;
       }
       if (!dictionary.length) return reply({error:"Dictionary is empty"},503);
+      // Always include the user's requested everyday short-word examples
+      // even when the random dictionary window does not contain them.
+      const preferredWords = language === "vi"
+        ? ["cá","cơm","đèn","thuyền","hoa","lá","sữa","nhà"]
+        : ["say","no","yes","bad"];
+      const {data:preferredRows,error:preferredError} = await admin.from("dictionary_words")
+        .select("word,normalized").eq("language",language).eq("is_active",true)
+        .in("normalized",preferredWords);
+      if (preferredError) throw preferredError;
+      dictionary.push(...(preferredRows||[]));
       const minWordLength = 2;
       const candidates = shuffle(dictionary.filter((x:any)=>{
         const length=Array.from(x.normalized || "").length;
