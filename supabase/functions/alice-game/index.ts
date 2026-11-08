@@ -51,14 +51,43 @@ function placeWord(board: string[][], word: string) {
 function makeBoard(words: {word:string;normalized:string}[], language: string, difficulty: string) {
   const board = Array.from({length:15},()=>Array(20).fill(""));
   const placed: string[] = [];
-  const minWordLength = 2;
   const targetLimit = difficulty === "very-hard" ? 42 : 36;
-  const orderedWords = shuffle(words).sort((a,b)=>
+  const eligible = shuffle(words.filter((item:any) => {
+    const length = Array.from(normalize(item.normalized)).length;
+    return length >= 2 && length <= 20;
+  }));
+  // Reserve board slots for short words in every difficulty. Sorting the
+  // final selection longest-first still makes placement reliable.
+  const buckets = [
+    { min: 2, max: 3, count: difficulty === "very-hard" ? 14 : 12 },
+    { min: 4, max: 5, count: difficulty === "very-hard" ? 10 : 8 },
+    { min: 6, max: 7, count: difficulty === "very-hard" ? 9 : 8 },
+    { min: 8, max: 20, count: difficulty === "very-hard" ? 9 : 8 }
+  ];
+  const selected:any[] = [];
+  const used = new Set<string>();
+  for (const bucket of buckets) {
+    const group = shuffle(eligible.filter((item:any) => {
+      const length = Array.from(normalize(item.normalized)).length;
+      return length >= bucket.min && length <= bucket.max && !used.has(normalize(item.normalized));
+    })).slice(0,bucket.count);
+    for (const item of group) {
+      const key = normalize(item.normalized);
+      if (!used.has(key)) { selected.push(item); used.add(key); }
+    }
+  }
+  if (selected.length < targetLimit) {
+    for (const item of shuffle(eligible)) {
+      const key = normalize(item.normalized);
+      if (used.has(key)) continue;
+      selected.push(item); used.add(key);
+      if (selected.length >= targetLimit) break;
+    }
+  }
+  const orderedWords = selected.sort((a:any,b:any)=>
     Array.from(normalize(b.normalized)).length-Array.from(normalize(a.normalized)).length
   );
   for (const item of orderedWords) {
-    const length = Array.from(normalize(item.normalized)).length;
-    if (length < minWordLength || length > 20) continue;
     if (placed.length >= targetLimit) break;
     if (placeWord(board,item.normalized)) placed.push(item.normalized);
   }
