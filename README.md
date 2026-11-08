@@ -12,6 +12,18 @@ Serve the repository root with any static web server. Opening `index.html` direc
 
 The game supports guest play. Signed-in play uses the server-generated board, server-side word validation, and server-side scoring.
 
+## Deploy with Cloudflare Pages
+
+This is a static site; no build step is required.
+1. Connect this GitHub repository to Cloudflare Pages.
+2. Select the `main` production branch.
+3. Set the framework preset to **None**.
+4. Leave the build command empty.
+5. Set the build output directory to `/`.
+6. After the first deployment, add the site's production URL to Supabase Authentication → URL Configuration → Redirect URLs.
+
+The site entry point is the root `index.html`.
+
 ## Supabase
 
 Project URL: `https://drxdsooffyadkjrbchxx.supabase.co`
