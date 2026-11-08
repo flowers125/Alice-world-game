@@ -133,6 +133,7 @@ Deno.serve(async (req: Request) => {
       const path = cells.map((p:any)=>({r:Number(p.r),c:Number(p.c)}));
       if (path.some((p:any)=>!Number.isInteger(p.r)||!Number.isInteger(p.c)||p.r<0||p.r>9||p.c<0||p.c>9)) return reply({error:"Invalid cell"},400);
       const dr = path[1].r-path[0].r, dc=path[1].c-path[0].c;
+      if (dr===0 && dc===0) return reply({error:"Selection must contain distinct cells"},400);
       if (!(dr===0||dc===0||Math.abs(dr)===Math.abs(dc))) return reply({error:"Path must be straight"},400);
       const sr=Math.sign(dr), sc=Math.sign(dc);
       for(let i=1;i<path.length;i++) {
