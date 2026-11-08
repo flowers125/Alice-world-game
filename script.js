@@ -89,7 +89,9 @@ function selectCandidates(sourceWords, difficulty) {
   const minWordLength = difficulty === "very-hard" ? 4 : 2;
   const targetLimit = difficulty === "very-hard" ? 28 : 16;
   return shuffle([...new Set(sourceWords
-    .filter(raw => !/\\s/u.test(raw.trim()))\n    .map(normalize)\n    .filter(w => w.length >= minWordLength && w.length <= SIZE)
+    .filter(raw => !/\s/u.test(raw.trim()))
+    .map(normalize)
+    .filter(w => w.length >= minWordLength && w.length <= SIZE)
     .map(w => w.join("")))])
     .slice(0, targetLimit)
     .map(word => Array.from(word))
