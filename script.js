@@ -3,7 +3,7 @@
 const ROWS = 15;
 const COLS = 20;
 const MAX_WORD_LENGTH = 20;
-const ROUND_SECONDS = 150;
+const ROUND_SECONDS = 180;
 
 const FALLBACK_WORDS = {
   vi: ["alice","cá","cơm","đèn","thuyền","hoa","lá","sữa","nhà","nắng","mây","trăng","biển","rừng","sao","mưa","gió","sách","mèo","chim","cây","đường","nước","bình minh","cầu vồng"],
@@ -63,7 +63,7 @@ function showRoundTopic(topic) {
 
 
 const ALPHABETS = {
-  vi: Array.from("aăâbcdđeêghiklmnoôơpqrstuưvxy"),
+  vi: Array.from("aăâbcdđeêghiklmnoôơpqrstuưvxyáàảãạắằẳẵặấầẩẫậéèẻẽẹếềểễệíìỉĩịóòỏõọốồổỗộớờởỡợúùủụứừửựýỳỷỹỵ"),
   en: Array.from("abcdefghijklmnopqrstuvwxyz")
 };
 const DIRECTIONS = [[0,1],[0,-1],[1,0],[-1,0],[1,1],[1,-1],[-1,1],[-1,-1]];
@@ -84,6 +84,7 @@ const state = {
   topic: null,
   dictionary: { vi: [], en: [] },
   dictionaryReady: false,
+  validWords: new Set(),
   found: new Set(),
   selected: [],
   running: false,
@@ -109,10 +110,15 @@ const normalize = word => Array.from(
   word.normalize("NFC").toLocaleLowerCase(state.language).replace(/\s+/g, "")
 );
 
-function scoreFor(count) {
-  const base = count === 1 ? 2 : count === 2 ? 5 : count >= 3 ? 12 : 0;
-  if (state.difficulty === "very-easy") return base / 2;
-  return base + (state.difficulty === "very-hard" ? count * 3 : 0);
+function scoreFor(length) {
+  if (length === 2) return 1;
+  if (length === 3) return 2;
+  if (length === 4) return 3;
+  if (length === 5) return 7;
+  if (length === 6) return 8;
+  if (length === 7) return 9;
+  if (length === 8) return 11;
+  return length >= 9 ? 15 : 0;
 }
 
 function canPlace(grid, letters, row, col, dr, dc) {
@@ -188,23 +194,13 @@ function generateRound() {
   state.seconds = ROUND_SECONDS;
   state.score = 0;
 
-  const sourceWords = state.dictionary[state.language].length
-    ? state.dictionary[state.language]
-    : FALLBACK_WORDS[state.language];
   state.topic = chooseTopic(state.language);
   showRoundTopic(state.topic);
-  const topicWords = new Set(state.topic.words.map(word => normalize(word).join("")));
-  const candidates = selectCandidates(sourceWords.filter(word => topicWords.has(normalize(word).join(""))), state.difficulty);
-
   state.words = [];
-  for (const word of candidates) {
-    if (placeWord(state.grid, word)) state.words.push(word.join(""));
-  }
-
   const alphabet = ALPHABETS[state.language];
   for (let r = 0; r < ROWS; r++) {
     for (let c = 0; c < COLS; c++) {
-      if (!state.grid[r][c]) state.grid[r][c] = alphabet[Math.floor(Math.random()*alphabet.length)];
+      state.grid[r][c] = alphabet[Math.floor(Math.random()*alphabet.length)];
     }
   }
 
@@ -231,12 +227,15 @@ function renderGrid() {
     const cell = document.createElement("button");
     cell.type = "button";
     cell.className = "grid-cell";
-    cell.textContent = letter.toLocaleUpperCase(state.language);
+    cell.textContent = letter ? letter.toLocaleUpperCase(state.language) : "";
+    cell.disabled = !letter || !state.running;
+    if (!letter) cell.classList.add("empty");
     cell.dataset.row = r;
     cell.dataset.col = c;
     cell.setAttribute("aria-label", `Row ${r+1}, column ${c+1}`);
     grid.appendChild(cell);
   }));
+  renderWordBuilder();
 }
 
 function celebrateFoundWord(cells) {
@@ -246,6 +245,48 @@ function celebrateFoundWord(cells) {
 function updateHUD() {
   $("timer").textContent = state.seconds;
   $("score").textContent = state.score;
+}
+
+function renderWordBuilder() {
+  const word = state.selected.map(({row,col}) => state.grid[row][col]).join("").toLocaleUpperCase(state.language);
+  $("word-builder").textContent = word || (state.language === "vi" ? "Chọn chữ cái để ghép từ" : "Tap letters to build a word");
+  $("confirm-word").disabled = !state.running || state.selected.length < 2;
+  $("clear-word").disabled = !state.selected.length;
+}
+
+function clearWordSelection() {
+  state.selected = [];
+  paintSelection();
+  renderWordBuilder();
+}
+
+function localSubmitWord(cells) {
+  if (!state.running || cells.length < 2) return;
+  const word = cells.map(({row,col}) => state.grid[row][col]).join("").normalize("NFC").toLocaleLowerCase(state.language);
+  const key = normalize(word).join("");
+  const length = Array.from(word).length;
+  if (length < 2 || !state.validWords.has(key) || state.found.has(key)) {
+    $("game-message").textContent = state.language === "vi" ? "Từ không hợp lệ, thử ghép từ khác nhé!" : "Not a valid word. Try another!";
+    playTone(190);
+    return;
+  }
+  state.found.add(key);
+  state.score += scoreFor(length);
+  cells.forEach(({row,col}) => { state.grid[row][col] = ""; });
+  $("game-message").textContent = (state.language === "vi" ? "Tìm thấy: " : "Found: ") + word.toLocaleUpperCase(state.language);
+  playTone(660);
+  renderGrid();
+  updateHUD();
+  if (state.grid.every(row => row.every(letter => !letter))) finishRound();
+}
+
+window.handleWordSubmit = async cells => localSubmitWord(cells);
+
+async function confirmSelectedWord() {
+  if (!state.running || state.selected.length < 2) return;
+  const cells = state.selected.slice();
+  clearWordSelection();
+  await window.handleWordSubmit(cells);
 }
 
 function cellAt(x,y) {
@@ -358,6 +399,8 @@ function applyLanguage() {
   $("subtitle").textContent = vi ? "Tìm những từ ẩn!" : "Find the hidden words!";
   if (state.topic && !$("topic-label").hidden) showRoundTopic(state.topic);
   $("timer-label").textContent = vi ? "Thời gian" : "Time";
+  $("confirm-word").textContent = "OK";
+  $("clear-word").textContent = vi ? "Xóa chọn" : "Clear";
   $("score-label").textContent = vi ? "Điểm" : "Score";
   $("start-game").textContent = vi ? "Bắt đầu" : "Start Game";
   $("help-button").textContent = vi ? "Cách chơi" : "How to play";
@@ -369,8 +412,8 @@ function applyLanguage() {
   $("difficulty").options[2].textContent = vi ? "Rất khó" : "Very Hard";
   $("help-title").textContent = vi ? "Cách chơi" : "How to play";
   $("help-copy").textContent = vi
-    ? "Tìm các từ đơn ẩn bằng cách kéo theo đường thẳng: ngang, dọc hoặc chéo. Từ có thể xuất hiện theo cả hai chiều. Từ ngắn như cá, nhà, lá, no, yes vẫn hợp lệ ở mọi chế độ. Mỗi từ chỉ được tính một lần. Bạn có 150 giây!"
-    : "Find single hidden words by dragging in a straight line: horizontally, vertically, or diagonally. Words can appear in either direction. Short words such as no, yes, cat and sun are valid in every mode. Each word counts once. You have 150 seconds!";
+    ? "Click lần lượt từng chữ cái bất kỳ để ghép thành từ có nghĩa, sau đó nhấn OK hoặc Enter. Từ hợp lệ sẽ được tính điểm và các chữ đã dùng biến mất, ô trống không sinh chữ mới. Bạn có 180 giây!"
+    : "Tap letters in any order to build a meaningful word, then press OK or Enter. Valid words score points and their cells disappear. Empty cells stay empty. You have 180 seconds!";
   $("close-help").textContent = vi ? "Đã hiểu" : "Got it";
   $("google-sign-in").textContent = vi ? "Đăng nhập Google" : "Sign in with Google";
   $("sign-out").textContent = vi ? "Đăng xuất" : "Sign out";
@@ -425,6 +468,10 @@ async function loadDictionaries() {
     }
   }));
   results.forEach(([language, words]) => { state.dictionary[language] = words; });
+  state.validWords = new Set(state.dictionary[state.language]
+    .filter(word => !/\s/u.test(word.trim()))
+    .map(word => normalize(word).join(""))
+    .filter(word => Array.from(word).length >= 2));
   state.dictionaryReady = true;
   $("start-game").disabled = state.backendReady === false;
   $("game-message").textContent = "";
@@ -467,27 +514,22 @@ document.addEventListener("DOMContentLoaded", () => {
     if (state.running) generateRound();
   });
 
-  $("game-grid").addEventListener("pointerdown", e => {
+  $("game-grid").addEventListener("click", e => {
     const cell = e.target.closest(".grid-cell");
-    if (!cell) return;
-    e.preventDefault();
-    beginSelection(cell, e.pointerId);
-  });
-  document.addEventListener("pointermove", e => {
-    if (!state.pointerDown || e.pointerId !== state.pointerId) return;
-    moveSelection(cellAt(e.clientX,e.clientY));
-  });
-  window.addEventListener("pointerup", e => {
-    if (state.pointerDown && e.pointerId === state.pointerId) endSelection();
-  }, true);
-  window.addEventListener("pointercancel", e => {
-    if (!state.pointerDown || e.pointerId !== state.pointerId) return;
-    state.pointerDown = false;
-    state.selected = [];
-    state.direction = null;
-    $("game-message").textContent = state.language === "vi"
-      ? "Thao tác kéo đã bị gián đoạn, hãy thử lại."
-      : "Selection was interrupted. Please try again.";
+    if (!cell || cell.disabled || !state.running) return;
+    const position = {row:+cell.dataset.row,col:+cell.dataset.col};
+    const existing = state.selected.findIndex(p => p.row === position.row && p.col === position.col);
+    if (existing >= 0) state.selected.splice(existing, 1);
+    else state.selected.push(position);
     paintSelection();
-  }, true);
+    renderWordBuilder();
+  });
+  $("confirm-word").addEventListener("click", confirmSelectedWord);
+  $("clear-word").addEventListener("click", clearWordSelection);
+  document.addEventListener("keydown", e => {
+    if (e.key === "Enter" && state.running && state.selected.length >= 2) {
+      e.preventDefault();
+      confirmSelectedWord();
+    }
+  });
 });
