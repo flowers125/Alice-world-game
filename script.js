@@ -85,6 +85,7 @@ const state = {
   dictionary: { vi: [], en: [] },
   dictionaryReady: false,
   validWords: new Set(),
+  letterWeights: {vi: [], en: []},
   found: new Set(),
   selected: [],
   running: false,
@@ -109,6 +110,43 @@ const shuffle = list => {
 const normalize = word => Array.from(
   word.normalize("NFC").toLocaleLowerCase(state.language).replace(/\s+/g, "")
 );
+
+function buildLetterWeights(words) {
+  const counts = new Map();
+  for (const raw of words) {
+    if (/\\s/u.test(raw.trim())) continue;
+    for (const letter of Array.from(raw.normalize("NFC").toLocaleLowerCase())) {
+      counts.set(letter, (counts.get(letter) || 0) + 1);
+    }
+  }
+  return [...counts.entries()].map(([letter, weight]) => ({letter, weight}));
+}
+
+function randomWeightedLetter(weights, fallback) {
+  if (!weights.length) return fallback[Math.floor(Math.random() * fallback.length)];
+  const total = weights.reduce((sum, item) => sum + item.weight, 0);
+  let pick = Math.random() * total;
+  for (const item of weights) {
+    pick -= item.weight;
+    if (pick <= 0) return item.letter;
+  }
+  return weights[weights.length - 1].letter;
+}
+
+function injectStarterWords(language) {
+  const starterWords = language === "vi"
+    ? ["cá","cơm","đèn","thuyền","hoa","lá","sữa","nhà"]
+    : ["say","no","yes"];
+  const used = new Set();
+  for (const word of starterWords) {
+    for (const letter of Array.from(word.normalize("NFC"))) {
+      let index;
+      do { index = Math.floor(Math.random() * ROWS * COLS); } while (used.has(index));
+      used.add(index);
+      state.grid[Math.floor(index / COLS)][index % COLS] = letter;
+    }
+  }
+}
 
 function scoreFor(length) {
   if (length === 2) return 1;
@@ -200,9 +238,10 @@ function generateRound() {
   const alphabet = ALPHABETS[state.language];
   for (let r = 0; r < ROWS; r++) {
     for (let c = 0; c < COLS; c++) {
-      state.grid[r][c] = alphabet[Math.floor(Math.random()*alphabet.length)];
+      state.grid[r][c] = randomWeightedLetter(state.letterWeights[state.language], alphabet);
     }
   }
+  injectStarterWords(state.language);
 
   const palette = PALETTES[Math.floor(Math.random()*PALETTES.length)];
   document.documentElement.style.setProperty("--bg", palette.bg);
@@ -472,7 +511,10 @@ async function loadDictionaries() {
       return [language, FALLBACK_WORDS[language]];
     }
   }));
-  results.forEach(([language, words]) => { state.dictionary[language] = words; });
+  results.forEach(([language, words]) => {
+    state.dictionary[language] = words;
+    state.letterWeights[language] = buildLetterWeights(words);
+  });
   state.validWords = new Set(state.dictionary[state.language]
     .filter(word => !/\s/u.test(word.trim()))
     .map(word => normalize(word).join(""))
