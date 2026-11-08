@@ -182,3 +182,13 @@ header p { font-size: 12px; }
 
 /* Ensure the topic stays hidden until a round starts. */
 .topic-label[hidden] { display: none !important; }
+
+
+/* Tap-to-build word controls */
+.word-builder-panel{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:9px 12px;margin:8px 0;border:1px solid rgba(117,98,156,.16);border-radius:10px;background:#faf8ff}
+#word-builder{flex:1;min-width:0;min-height:24px;font-size:clamp(15px,2vw,20px);font-weight:700;letter-spacing:.08em;overflow-wrap:anywhere}
+.word-builder-actions{display:flex;gap:7px}
+.word-builder-actions button{padding:7px 13px;font-size:12px}
+.grid-cell.empty{background:transparent;border:1px dashed rgba(117,98,156,.13);box-shadow:none;cursor:default}
+.grid-cell:disabled{cursor:default}
+@media(max-width:600px){.word-builder-panel{padding:7px;gap:6px}.word-builder-actions{gap:4px}.word-builder-actions button{padding:7px 9px;font-size:11px}}
