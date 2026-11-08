@@ -51,6 +51,8 @@
     clearInterval(state.timer);
     state.running=false;
     $ui("start-game").disabled=true;
+    $ui("language").disabled=true;
+    $ui("difficulty").disabled=true;
     $ui("game-message").textContent=state.language==="vi"?"Đang tạo lượt chơi...":"Preparing round...";
     try {
       const result=await callGame("start",{language:state.language,difficulty:state.difficulty});
@@ -76,6 +78,8 @@
       $ui("game-message").textContent=error.message;
     } finally {
       $ui("start-game").disabled=false;
+      $ui("language").disabled=false;
+      $ui("difficulty").disabled=false;
       startingRound = false;
     }
   }
