@@ -127,6 +127,7 @@
       );
       if(found){
         state.found.add(found);
+        celebrateFoundWord(selected);
         state.score=scoreFor(state.found.size);
         $ui("game-message").textContent=state.language==="vi"?"Tìm thấy từ!":"Word found!";
         playTone(660);
