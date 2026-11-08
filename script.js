@@ -1,6 +1,8 @@
 "use strict";
 
-const SIZE = 10;
+const ROWS = 15;
+const COLS = 20;
+const MAX_WORD_LENGTH = 20;
 const ROUND_SECONDS = 60;
 
 const FALLBACK_WORDS = {
@@ -87,11 +89,11 @@ function placeWord(grid, letters) {
 
 function selectCandidates(sourceWords, difficulty) {
   const minWordLength = difficulty === "very-hard" ? 4 : 2;
-  const targetLimit = difficulty === "very-hard" ? 28 : 16;
+  const targetLimit = difficulty === "very-hard" ? 42 : 36;
   return shuffle([...new Set(sourceWords
     .filter(raw => !/\s/u.test(raw.trim()))
     .map(normalize)
-    .filter(w => w.length >= minWordLength && w.length <= SIZE)
+    .filter(w => w.length >= minWordLength && w.length <= MAX_WORD_LENGTH)
     .map(w => w.join("")))])
     .slice(0, targetLimit)
     .map(word => Array.from(word))
@@ -100,7 +102,7 @@ function selectCandidates(sourceWords, difficulty) {
 
 function generateRound() {
   clearInterval(state.timer);
-  state.grid = Array.from({length:SIZE}, () => Array(SIZE).fill(""));
+  state.grid = Array.from({length:ROWS}, () => Array(COLS).fill(""));
   state.found.clear();
   state.selected = [];
   state.direction = null;
@@ -118,8 +120,8 @@ function generateRound() {
   }
 
   const alphabet = ALPHABETS[state.language];
-  for (let r = 0; r < SIZE; r++) {
-    for (let c = 0; c < SIZE; c++) {
+  for (let r = 0; r < ROWS; r++) {
+    for (let c = 0; c < COLS; c++) {
       if (!state.grid[r][c]) state.grid[r][c] = alphabet[Math.floor(Math.random()*alphabet.length)];
     }
   }
@@ -153,6 +155,10 @@ function renderGrid() {
     cell.setAttribute("aria-label", `Row ${r+1}, column ${c+1}`);
     grid.appendChild(cell);
   }));
+}
+
+function celebrateFoundWord(cells) {
+  cells.forEach(({row,col},i)=>{const el=document.querySelector(`.grid-cell[data-row="${row}"][data-col="${col}"]`);if(!el)return;el.classList.remove("word-found");void el.offsetWidth;el.classList.add("word-found");el.style.animationDelay=`${i*18}ms`;window.setTimeout(()=>{el.classList.remove("word-found");el.style.animationDelay="";},850+i*18);});
 }
 
 function updateHUD() {
@@ -197,7 +203,7 @@ function moveSelection(cell) {
     if (dr0 * dr < 0 || dc0 * dc < 0 || Math.abs(dr0) !== Math.abs(dc0)) return;
     steps = Math.abs(dr0);
   }
-  if (steps >= SIZE) return;
+  if (steps >= MAX_WORD_LENGTH) return;
   state.selected = Array.from({length:steps+1}, (_,i) => ({row:start.row+dr*i,col:start.col+dc*i}));
   paintSelection();
 }
@@ -221,6 +227,7 @@ function endSelection() {
 
   if (found) {
     state.found.add(found);
+    celebrateFoundWord(state.selected);
     state.score = scoreFor(state.found.size);
     $("game-message").textContent = state.language === "vi" ? "Tìm thấy từ!" : "Word found!";
     playTone(660);
