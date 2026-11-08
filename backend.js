@@ -126,6 +126,7 @@
     const selectedRoundId=roundId;
     claimQueue=claimQueue.then(()=>claimSecureWord(payload,selectedRoundId));
     await claimQueue;
+    if(state.running && state.grid.every(row=>row.every(letter=>!letter))) await finishRound();
   };
 
   async function claimSecureWord(cells,targetRoundId){
