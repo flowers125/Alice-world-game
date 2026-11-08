@@ -337,7 +337,22 @@ async function loadDictionaries() {
   $("game-message").textContent = "";
 }
 
-document.addEventListener("DOMContentLoaded", () => {\n  const artSets = [["🌼","🌿","🍃","🌷","🦋"],["🐇","🌸","🍀","🐝","🌱"],["🐈","🌻","🍃","🦋","🌼"],["🦊","🌿","🌷","🍀","🐦"]];\n  const art = document.createElement("div");\n  art.className = "ambient-art";\n  art.setAttribute("aria-hidden", "true");\n  const motifs = artSets[Math.floor(Math.random() * artSets.length)];\n  for (let i = 0; i < 18; i++) {\n    const item = document.createElement("span");\n    item.textContent = motifs[i % motifs.length];\n    item.style.left = (4 + Math.random() * 92) + "%";\n    item.style.top = (3 + Math.random() * 94) + "%";\n    item.style.fontSize = (18 + Math.random() * 22) + "px";\n    item.style.transform = `rotate(${-25 + Math.random() * 50}deg)`;\n    art.appendChild(item);\n  }\n  document.body.prepend(art);
+document.addEventListener("DOMContentLoaded", () => {
+  const artSets = [["🌼","🌿","🍃","🌷","🦋"],["🐇","🌸","🍀","🐝","🌱"],["🐈","🌻","🍃","🦋","🌼"],["🦊","🌿","🌷","🍀","🐦"]];
+  const art = document.createElement("div");
+  art.className = "ambient-art";
+  art.setAttribute("aria-hidden", "true");
+  const motifs = artSets[Math.floor(Math.random() * artSets.length)];
+  for (let i = 0; i < 18; i++) {
+    const item = document.createElement("span");
+    item.textContent = motifs[i % motifs.length];
+    item.style.left = (4 + Math.random() * 92) + "%";
+    item.style.top = (3 + Math.random() * 94) + "%";
+    item.style.fontSize = (18 + Math.random() * 22) + "px";
+    item.style.transform = `rotate(${-25 + Math.random() * 50}deg)`;
+    art.appendChild(item);
+  }
+  document.body.prepend(art);
   $("start-game").addEventListener("click", generateRound);
   loadDictionaries().catch(() => {
     state.dictionaryReady = true;
