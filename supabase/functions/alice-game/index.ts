@@ -1,258 +1,153 @@
+import "jsr:@supabase/functions-js/edge-runtime.d.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 
-const corsHeaders = {
+const cors = {
   "Access-Control-Allow-Origin": "*",
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
   "Access-Control-Allow-Methods": "POST, OPTIONS",
+  "Content-Type": "application/json",
 };
+const reply = (data: unknown, status = 200) =>
+  new Response(JSON.stringify(data), { status, headers: cors });
 
-const SIZE = 10;
-const DIRECTIONS = [[0,1],[0,-1],[1,0],[-1,0],[1,1],[1,-1],[-1,1],[-1,-1]];
-const ALPHABETS = {
-  vi: Array.from("aăâbcdđeêghiklmnoôơpqrstuưvxy"),
-  en: Array.from("abcdefghijklmnopqrstuvwxyz"),
-};
+const url = Deno.env.get("SUPABASE_URL")!;
+const anonKey = Deno.env.get("SUPABASE_ANON_KEY")!;
+const serviceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
+const admin = createClient(url, serviceKey, { auth: { persistSession: false } });
 
-const json = (body: unknown, status = 200) =>
-  new Response(JSON.stringify(body), {
-    status,
-    headers: { ...corsHeaders, "Content-Type": "application/json" },
-  });
-
-const shuffle = <T>(items: T[]): T[] => {
+function normalize(value: string) {
+  return value.normalize("NFC").toLocaleLowerCase().replace(/[\s\u200B-\u200D]+/gu, "");
+}
+function shuffle<T>(items: T[]) {
   const a = [...items];
   for (let i = a.length - 1; i > 0; i--) {
     const j = Math.floor(Math.random() * (i + 1));
     [a[i], a[j]] = [a[j], a[i]];
   }
   return a;
-};
-
-function placeWord(grid: string[][], word: string) {
-  const letters = Array.from(word);
-  const starts: number[][] = [];
-  for (let r = 0; r < SIZE; r++) {
-    for (let c = 0; c < SIZE; c++) {
-      for (const [dr, dc] of DIRECTIONS) starts.push([r,c,dr,dc]);
-    }
-  }
-  for (const [r,c,dr,dc] of shuffle(starts)) {
-    let valid = true;
-    for (let i = 0; i < letters.length; i++) {
-      const rr = r + dr*i, cc = c + dc*i;
-      if (rr < 0 || rr >= SIZE || cc < 0 || cc >= SIZE ||
-          (grid[rr][cc] && grid[rr][cc] !== letters[i])) {
-        valid = false;
-        break;
-      }
-    }
-    if (!valid) continue;
-    const path = [];
-    for (let i = 0; i < letters.length; i++) {
-      const rr = r + dr*i, cc = c + dc*i;
-      grid[rr][cc] = letters[i];
-      path.push([rr,cc]);
-    }
-    return path;
-  }
-  return null;
 }
-
-function scoreFor(count: number, difficulty: string) {
+function totalScore(count: number, hard: boolean) {
   const base = count === 1 ? 2 : count === 2 ? 5 : count >= 3 ? 12 : 0;
-  return base + (difficulty === "very-hard" ? count * 3 : 0);
+  return base + (hard ? count * 3 : 0);
 }
-
-function validatePath(cells: unknown, grid: string[][]) {
-  if (!Array.isArray(cells) || cells.length < 2 || cells.length > SIZE) return null;
-  const coords = cells as unknown[];
-  const parsed = coords.map((p) => {
-    if (!Array.isArray(p) || p.length !== 2) return null;
-    const [r,c] = p;
-    if (!Number.isInteger(r) || !Number.isInteger(c) || r < 0 || r >= SIZE || c < 0 || c >= SIZE) return null;
-    return [r,c] as [number,number];
-  });
-  if (parsed.some(p => !p)) return null;
-  const points = parsed as [number,number][];
-  const dr = points[1][0] - points[0][0];
-  const dc = points[1][1] - points[0][1];
-  if (!(dr === 0 || dc === 0 || Math.abs(dr) === Math.abs(dc))) return null;
-  const stepR = Math.sign(dr), stepC = Math.sign(dc);
-  if (dr === 0 && dc === 0) return null;
-  for (let i = 1; i < points.length; i++) {
-    if (points[i][0] !== points[0][0] + stepR*i ||
-        points[i][1] !== points[0][1] + stepC*i) return null;
+function placeWord(board: string[][], word: string) {
+  const dirs = shuffle([[0,1],[1,0],[1,1],[1,-1],[-1,0],[0,-1],[-1,-1],[-1,1]]);
+  const letters = Array.from(normalize(word));
+  if (!letters.length || letters.length > 10) return false;
+  for (const [dr, dc] of dirs) {
+    for (const [r,c] of shuffle(Array.from({length:100},(_,i)=>[Math.floor(i/10),i%10]))) {
+      const er = r + dr * (letters.length - 1);
+      const ec = c + dc * (letters.length - 1);
+      if (er < 0 || er >= 10 || ec < 0 || ec >= 10) continue;
+      let fits = true;
+      for (let i=0;i<letters.length;i++) {
+        const existing = board[r+dr*i][c+dc*i];
+        if (existing && existing !== letters[i]) { fits=false; break; }
+      }
+      if (!fits) continue;
+      for (let i=0;i<letters.length;i++) board[r+dr*i][c+dc*i]=letters[i];
+      return true;
+    }
   }
-  const word = points.map(([r,c]) => grid[r][c]).join("");
-  return { word, reversed: Array.from(word).reverse().join("") };
+  return false;
+}
+function makeBoard(words: {word:string;normalized:string}[], language: string) {
+  const board = Array.from({length:10},()=>Array(10).fill(""));
+  const placed: string[] = [];
+  for (const item of shuffle(words)) {
+    if (placed.length >= 28) break;
+    if (placeWord(board,item.normalized)) placed.push(item.normalized);
+  }
+  const alphabet = language === "vi"
+    ? Array.from("aăâbcdđeêghiklmnoôơpqrstuưvxyáàảãạắằẳẵặấầẩẫậéèẻẽẹếềểễệíìỉĩịóòỏõọốồổỗộớờởỡợúùủũụứừửữựýỳỷỹỵ")
+    : Array.from("abcdefghijklmnopqrstuvwxyz");
+  for (let r=0;r<10;r++) for (let c=0;c<10;c++) {
+    if (!board[r][c]) board[r][c]=alphabet[Math.floor(Math.random()*alphabet.length)];
+  }
+  return {board, placed};
 }
 
-Deno.serve(async (req) => {
-  if (req.method === "OPTIONS") return new Response("ok", { headers: corsHeaders });
-  if (req.method !== "POST") return json({ error: "Method not allowed" }, 405);
-
-  const url = Deno.env.get("SUPABASE_URL");
-  const anonKey = Deno.env.get("SUPABASE_ANON_KEY");
-  const serviceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY");
-  if (!url || !anonKey || !serviceKey) return json({ error: "Server configuration missing" }, 500);
-
-  const authHeader = req.headers.get("Authorization") || "";
-  const token = authHeader.replace(/^Bearer\s+/i, "");
-  if (!token) return json({ error: "Sign in required" }, 401);
-
-  const authClient = createClient(url, anonKey, {
-    global: { headers: { Authorization: `Bearer ${token}` } },
-    auth: { persistSession: false, autoRefreshToken: false },
-  });
-  const { data: authData, error: authError } = await authClient.auth.getUser(token);
-  if (authError || !authData.user) return json({ error: "Invalid session" }, 401);
-  const user = authData.user;
-
-  const admin = createClient(url, serviceKey, {
-    auth: { persistSession: false, autoRefreshToken: false },
-  });
-
+Deno.serve(async (req: Request) => {
+  if (req.method === "OPTIONS") return new Response("ok",{headers:cors});
+  if (req.method !== "POST") return reply({error:"POST required"},405);
   try {
+    const auth = req.headers.get("Authorization") || "";
+    const token = auth.replace(/^Bearer\s+/i,"");
+    if (!token) return reply({error:"Authentication required"},401);
+    const userClient = createClient(url,anonKey,{global:{headers:{Authorization:"Bearer "+token}},auth:{persistSession:false}});
+    const {data:{user},error:userError} = await userClient.auth.getUser(token);
+    if (userError || !user) return reply({error:"Invalid session"},401);
+
     const body = await req.json();
-    const action = body?.action;
+    const action = body.action;
 
-    if (action === "create-round") {
-      const language = body.language;
-      const difficulty = body.difficulty;
-      if (!["vi","en"].includes(language) || !["normal","very-hard"].includes(difficulty)) {
-        return json({ error: "Invalid game settings" }, 400);
-      }
-      const { data: profile } = await admin.from("profiles").select("display_name").eq("id", user.id).maybeSingle();
-      if (!profile?.display_name) return json({ error: "Choose a display name before playing" }, 409);
-
-      const { data: dictionary, error: dictionaryError } = await admin.rpc("pick_dictionary_words", {
-        p_language: language,
-        p_limit: 1800,
-      });
-      if (dictionaryError || !dictionary?.length) {
-        return json({ error: "Dictionary is not imported yet" }, 503);
-      }
-
-      const candidates = shuffle([...new Set(dictionary.map((x: {word:string}) =>
-        x.word.normalize("NFC").toLocaleLowerCase(language).replace(/\s+/g,"")
-      ))]).filter((w: string) => Array.from(w).length >= 2 && Array.from(w).length <= SIZE)
-        .slice(0, 45).sort((a: string,b: string) => Array.from(b).length - Array.from(a).length);
-
-      const grid = Array.from({length:SIZE}, () => Array(SIZE).fill(""));
-      const placed: {word:string;path:number[][]}[] = [];
-      for (const word of candidates) {
-        const path = placeWord(grid, word);
-        if (path) placed.push({word, path});
-        if (placed.length >= 28) break;
-      }
-      if (placed.length < 5) return json({ error: "Not enough valid dictionary words" }, 503);
-
-      const alphabet = ALPHABETS[language as "vi" | "en"];
-      for (let r = 0; r < SIZE; r++) for (let c = 0; c < SIZE; c++) {
-        if (!grid[r][c]) grid[r][c] = alphabet[Math.floor(Math.random()*alphabet.length)];
-      }
-
-      const { data: round, error: roundError } = await admin.from("game_rounds").insert({
-        user_id: user.id,
-        language,
-        difficulty,
-        grid,
-        expires_at: new Date(Date.now() + 60_000).toISOString(),
-      }).select("id,created_at,expires_at").single();
-      if (roundError || !round) return json({ error: "Could not create round" }, 500);
-
-      const rows = placed.map(item => ({ round_id: round.id, word: item.word, path: item.path }));
-      const { error: wordsError } = await admin.from("round_words").insert(rows);
-      if (wordsError) {
-        await admin.from("game_rounds").delete().eq("id", round.id);
-        return json({ error: "Could not save round words" }, 500);
-      }
-      return json({ roundId: round.id, grid, expiresAt: round.expires_at });
+    if (action === "start") {
+      const language = body.language === "en" ? "en" : "vi";
+      const difficulty = body.difficulty === "very-hard" ? "very-hard" : "normal";
+      const {data: dictionary,error:dictError} = await admin
+        .from("dictionary_words").select("word,normalized")
+        .eq("language",language).eq("is_active",true).limit(5000);
+      if (dictError) throw dictError;
+      if (!dictionary?.length) return reply({error:"Dictionary is empty"},503);
+      const candidates = shuffle(dictionary.filter((x:any)=>Array.from(x.normalized || "").length>=2 && Array.from(x.normalized || "").length<=10));
+      const {board,placed} = makeBoard(candidates,language);
+      if (placed.length < 5) return reply({error:"Not enough eligible dictionary words"},503);
+      const started = new Date();
+      const expires = new Date(started.getTime()+60000);
+      const {data:round,error:roundError} = await admin.from("game_rounds").insert({
+        user_id:user.id, language,difficulty,board,target_words:placed,
+        started_at:started.toISOString(),expires_at:expires.toISOString()
+      }).select("id,started_at,expires_at").single();
+      if (roundError) throw roundError;
+      return reply({round_id:round.id,board,started_at:round.started_at,expires_at:round.expires_at,seconds:60});
     }
 
-    if (action === "claim-word") {
-      const roundId = body.roundId;
-      if (typeof roundId !== "string") return json({ error: "Invalid round" }, 400);
-      const { data: round, error } = await admin.from("game_rounds")
-        .select("id,user_id,grid,difficulty,expires_at,status,found_count,score")
-        .eq("id", roundId).eq("user_id", user.id).maybeSingle();
-      if (error || !round) return json({ error: "Round not found" }, 404);
-      if (round.status !== "active" || Date.now() > new Date(round.expires_at).getTime()) {
-        await admin.from("game_rounds").update({status:"expired"}).eq("id", roundId);
-        return json({ error: "Round has ended" }, 410);
-      }
-      const checked = validatePath(body.cells, round.grid as string[][]);
-      if (!checked) return json({ error: "Invalid straight-line selection" }, 400);
-      const { data: target } = await admin.from("round_words").select("word,path")
-        .eq("round_id", roundId).in("word", [checked.word, checked.reversed]).maybeSingle();
-      if (!target) return json({ error: "Word not found" }, 404);
-      const submitted = body.cells;
-      const expected = target.path as number[][];
-      const samePath = (a: number[][], b: number[][]) => JSON.stringify(a) === JSON.stringify(b);
-      if (!samePath(submitted, expected) && !samePath(submitted, [...expected].reverse())) {
-        return json({ error: "Selection does not match the hidden word path" }, 400);
-      }
-
-      const { data: claim, error: claimError } = await admin.rpc("claim_alice_word", {
-        p_round_id: roundId,
-        p_user_id: user.id,
-        p_word: target.word,
-      });
-      if (claimError) return json({ error: "Could not validate word" }, 500);
-      const result = Array.isArray(claim) ? claim[0] : claim;
-      if (!result?.found) return json({ error: "Word already claimed or round ended" }, 409);
-      return json({ found: true, foundCount: result.found_count, score: result.score });
-    }
-
-    if (action === "finish-round") {
-      const roundId = body.roundId;
-      const { data: round } = await admin.from("game_rounds")
-        .select("id,user_id,language,difficulty,score,status,expires_at")
+    if (action === "claim") {
+      const roundId = String(body.round_id || "");
+      const cells = body.cells;
+      if (!roundId || !Array.isArray(cells) || cells.length < 2 || cells.length > 10) return reply({error:"Invalid selection"},400);
+      const {data:round,error:roundError} = await admin.from("game_rounds")
+        .select("id,user_id,language,difficulty,board,target_words,expires_at,status")
         .eq("id",roundId).eq("user_id",user.id).maybeSingle();
-      if (!round) return json({ error: "Round not found" }, 404);
-      if (round.status === "active" && Date.now() < new Date(round.expires_at).getTime()) {
-        return json({ error: "Round is still active" }, 409);
+      if (roundError) throw roundError;
+      if (!round || round.status !== "active" || Date.now() > Date.parse(round.expires_at)) return reply({error:"Round expired"},410);
+      const path = cells.map((p:any)=>({r:Number(p.r),c:Number(p.c)}));
+      if (path.some((p:any)=>!Number.isInteger(p.r)||!Number.isInteger(p.c)||p.r<0||p.r>9||p.c<0||p.c>9)) return reply({error:"Invalid cell"},400);
+      const dr = path[1].r-path[0].r, dc=path[1].c-path[0].c;
+      if (!(dr===0||dc===0||Math.abs(dr)===Math.abs(dc))) return reply({error:"Path must be straight"},400);
+      const sr=Math.sign(dr), sc=Math.sign(dc);
+      for(let i=1;i<path.length;i++) {
+        if(path[i].r!==path[0].r+sr*i || path[i].c!==path[0].c+sc*i) return reply({error:"Path must be continuous and straight"},400);
       }
-      await admin.from("game_rounds").update({status:"finished"}).eq("id",roundId);
-      const { data: best } = await admin.from("personal_bests").select("score")
-        .eq("user_id",user.id).eq("language",round.language).eq("difficulty",round.difficulty).maybeSingle();
-      let personalBest = best?.score ?? 0;
-      if (round.score > personalBest) {
-        const { error: bestError } = await admin.from("personal_bests").upsert({
-          user_id:user.id, language:round.language, difficulty:round.difficulty,
-          score:round.score, achieved_at:new Date().toISOString(), round_id:round.id,
-        }, { onConflict:"user_id,language,difficulty" });
-        if (bestError) return json({ error:"Could not save personal best" },500);
-        personalBest = round.score;
-      }
-      return json({ score:round.score, personalBest, newPersonalBest:round.score > (best?.score ?? 0) });
-    }
-
-    if (action === "update-profile") {
-      const name = String(body.displayName || "").trim().normalize("NFC");
-      if (name.length < 2 || name.length > 20 || /[<>]/.test(name)) {
-        return json({ error: "Display name must be 2-20 characters" }, 400);
-      }
-      const { data, error } = await admin.from("profiles").update({display_name:name,updated_at:new Date().toISOString()})
-        .eq("id",user.id).select("display_name").single();
-      if (error) return json({ error: "Display name is already used or invalid" }, 409);
-      return json({ profile:data });
-    }
-
-    if (action === "leaderboard") {
-      const language = body.language, difficulty = body.difficulty;
-      if (!["vi","en"].includes(language) || !["normal","very-hard"].includes(difficulty)) {
-        return json({ error: "Invalid leaderboard" }, 400);
-      }
-      const { data, error } = await admin.rpc("get_alice_leaderboard", {
-        p_language:language, p_difficulty:difficulty, p_limit:20,
+      const formed = normalize(path.map((p:any)=>round.board[p.r][p.c]).join(""));
+      const reverse = normalize(Array.from(formed).reverse().join(""));
+      const targets = (round.target_words || []) as string[];
+      const matched = targets.find(w=>normalize(w)===formed || normalize(w)===reverse);
+      if (!matched) return reply({valid:false,reason:"not_a_hidden_word"},200);
+      const {count:foundCount,error:countError} = await admin.from("round_words")
+        .select("id",{count:"exact",head:true}).eq("round_id",roundId);
+      if (countError) throw countError;
+      const nextCount=(foundCount||0)+1;
+      const hard=round.difficulty==="very-hard";
+      const points=totalScore(nextCount,hard)-totalScore(nextCount-1,hard);
+      const {data:record,error:recordError} = await admin.rpc("alice_record_word",{
+        p_round_id:roundId,p_user_id:user.id,p_normalized:normalize(matched),p_points:points
       });
-      if (error) return json({ error:"Could not load leaderboard" },500);
-      return json({ entries:data || [] });
+      if(recordError) throw recordError;
+      if(!record?.ok) return reply({valid:false,reason:record?.reason||"already_found"},200);
+      return reply({valid:true,word:matched,added:record.added,score:record.score});
     }
 
-    return json({ error: "Unknown action" }, 400);
-  } catch (_) {
-    return json({ error: "Unexpected server error" }, 500);
+    if (action === "finish") {
+      const roundId=String(body.round_id||"");
+      if(!roundId) return reply({error:"round_id required"},400);
+      const {data,error} = await admin.rpc("alice_finish_round",{p_round_id:roundId,p_user_id:user.id});
+      if(error) throw error;
+      return reply(data);
+    }
+    return reply({error:"Unknown action"},400);
+  } catch (error) {
+    console.error("alice-game error",error);
+    return reply({error:"Internal server error"},500);
   }
 });
