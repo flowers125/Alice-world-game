@@ -102,12 +102,21 @@ function selectCandidates(sourceWords, difficulty) {
     { min: 6, max: 7, count: difficulty === "very-hard" ? 9 : 8 },
     { min: 8, max: MAX_WORD_LENGTH, count: difficulty === "very-hard" ? 9 : 8 }
   ];
-  const chosen = [];
-  const used = new Set();
+  const preferred = state.language === "vi"
+    ? ["cá","cơm","đèn","thuyền","hoa","lá","sữa","nhà"]
+    : ["say","no","yes","bad"];
+  const chosen = preferred
+    .map(raw => normalize(raw).join(""))
+    .filter(word => words.includes(word));
+  const used = new Set(chosen);
   for (const bucket of buckets) {
+    const alreadyChosen = chosen.filter(word =>
+      word.length >= bucket.min && word.length <= bucket.max
+    ).length;
+    const needed = Math.max(0, bucket.count - alreadyChosen);
     const group = shuffle(words.filter(word =>
       word.length >= bucket.min && word.length <= bucket.max && !used.has(word)
-    )).slice(0, bucket.count);
+    )).slice(0, needed);
     group.forEach(word => { chosen.push(word); used.add(word); });
   }
   if (chosen.length < targetLimit) {
