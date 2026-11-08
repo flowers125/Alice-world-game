@@ -84,6 +84,17 @@ function placeWord(grid, letters) {
   return false;
 }
 
+function selectCandidates(sourceWords, difficulty) {
+  const minWordLength = difficulty === "very-hard" ? 4 : 2;
+  const targetLimit = difficulty === "very-hard" ? 28 : 16;
+  return shuffle([...new Set(sourceWords.map(normalize)
+    .filter(w => w.length >= minWordLength && w.length <= SIZE)
+    .map(w => w.join("")))])
+    .slice(0, targetLimit)
+    .map(word => Array.from(word))
+    .sort((a,b) => b.length - a.length);
+}
+
 function generateRound() {
   clearInterval(state.timer);
   state.grid = Array.from({length:SIZE}, () => Array(SIZE).fill(""));
@@ -96,15 +107,7 @@ function generateRound() {
   const sourceWords = state.dictionary[state.language].length
     ? state.dictionary[state.language]
     : FALLBACK_WORDS[state.language];
-  const veryHard = state.difficulty === "very-hard";
-  const minWordLength = veryHard ? 4 : 2;
-  const targetLimit = veryHard ? 28 : 16;
-  const candidates = shuffle([...new Set(sourceWords.map(normalize)
-    .filter(w => w.length >= minWordLength && w.length <= SIZE)
-    .map(w => w.join("")))])
-    .slice(0, targetLimit)
-    .map(word => Array.from(word))
-    .sort((a,b) => b.length - a.length);
+  const candidates = selectCandidates(sourceWords, state.difficulty);
 
   state.words = [];
   for (const word of candidates) {
