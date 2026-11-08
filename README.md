@@ -12,17 +12,19 @@ Serve the repository root with any static web server. Opening `index.html` direc
 
 The game supports guest play. Signed-in play uses the server-generated board, server-side word validation, and server-side scoring.
 
-## Deploy with Cloudflare Pages
+## Deploy with Cloudflare Workers
 
-This is a static site; no build step is required.
-1. Connect this GitHub repository to Cloudflare Pages.
-2. Select the `main` production branch.
-3. Set the framework preset to **None**.
-4. Set the build command to `exit 0` (or leave it blank).
-5. Set the build output directory to `.` (the repository root).
-6. After the first deployment, add the site's production URL to Supabase Authentication → URL Configuration → Redirect URLs.
+This repository is deployed as a static-assets-only Worker. The Supabase Edge Function remains responsible for authenticated game operations; Cloudflare does not need runtime bindings for the frontend.
 
-The site entry point is the root `index.html`.
+Cloudflare Workers Builds settings:
+1. Production branch: `main`
+2. Build command: `npm run build`
+3. Deploy command: `npx wrangler deploy`
+4. Root directory: `/`
+
+The build creates `dist/` with only the public game files and dictionaries. `wrangler.jsonc` deploys that directory as static assets. The “static assets only” notices in Runtime / Bindings are expected for this architecture.
+
+After deployment, add the production Worker URL to Supabase Authentication → URL Configuration → Redirect URLs.
 
 ## Supabase
 
