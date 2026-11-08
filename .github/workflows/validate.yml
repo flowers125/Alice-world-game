@@ -31,7 +31,7 @@ jobs:
         uses: denoland/setup-deno@v2
 
       - name: Type-check Supabase Edge Function
-        run: deno check supabase/functions/alice-game/index.ts
+        run: deno check --node-modules-dir=auto supabase/functions/alice-game/index.ts
 
       - name: Verify required game assets
         run: |
