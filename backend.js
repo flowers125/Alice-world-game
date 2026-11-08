@@ -102,8 +102,8 @@
 
   endSelection=function(){
     if(!state.pointerDown) return;
-    state.pointerDown=false;
     if(!secureRound){localEndSelection();return;}
+    state.pointerDown=false;
     const cells=state.selected.map(({row,col})=>({r:row,c:col}));
     state.selected=[];
     state.direction=null;
