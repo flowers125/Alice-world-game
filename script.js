@@ -3,10 +3,11 @@
 const SIZE = 10;
 const ROUND_SECONDS = 60;
 
-const WORDS = {
-  vi: ["alice","hoa","nắng","mây","trăng","biển","rừng","sao","mưa","gió","sách","mèo","chim","cây","nhà","đường","nước","lửa","mùa hè","bình minh","cầu vồng","ánh sáng","hoa sen","bầu trời","dòng sông","cánh đồng","ngôi sao"],
-  en: ["alice","flower","sun","moon","cloud","ocean","forest","star","rain","wind","book","cat","bird","tree","house","river","water","light","dream","spring","rainbow","garden","butterfly","sunshine","mountain","flowerpot"]
+const FALLBACK_WORDS = {
+  vi: ["alice","hoa","nắng","mây","trăng","biển","rừng","sao","mưa","gió","sách","mèo","chim","cây","nhà","đường","nước","mùa hè","bình minh","cầu vồng"],
+  en: ["alice","flower","sun","moon","cloud","ocean","forest","star","rain","wind","book","cat","bird","tree","house","river","water","light","dream","spring"]
 };
+const DICTIONARY_URLS = { vi: "dictionaries/vi.txt", en: "dictionaries/en.txt" };
 
 const ALPHABETS = {
   vi: Array.from("aăâbcdđeêghiklmnoôơpqrstuưvxy"),
@@ -27,6 +28,8 @@ const state = {
   difficulty: "normal",
   grid: [],
   words: [],
+  dictionary: { vi: [], en: [] },
+  dictionaryReady: false,
   found: new Set(),
   selected: [],
   running: false,
@@ -90,8 +93,14 @@ function generateRound() {
   state.seconds = ROUND_SECONDS;
   state.score = 0;
 
-  const candidates = shuffle(WORDS[state.language].map(normalize)
-    .filter(w => w.length >= 2 && w.length <= SIZE))
+  const sourceWords = state.dictionary[state.language].length
+    ? state.dictionary[state.language]
+    : FALLBACK_WORDS[state.language];
+  const candidates = shuffle([...new Set(sourceWords.map(normalize)
+    .filter(w => w.length >= 2 && w.length <= SIZE)
+    .map(w => w.join("")))])
+    .slice(0, 34)
+    .map(word => Array.from(word))
     .sort((a,b) => b.length - a.length);
 
   state.words = [];
@@ -273,8 +282,34 @@ function changeLanguage(value) {
   else $("game-message").textContent = "";
 }
 
+async function loadDictionaries() {
+  $("start-game").disabled = true;
+  $("game-message").textContent = state.language === "vi" ? "Đang tải từ điển..." : "Loading dictionaries...";
+  const results = await Promise.all(["vi", "en"].map(async language => {
+    try {
+      const response = await fetch(DICTIONARY_URLS[language], { cache: "no-cache" });
+      if (!response.ok) throw new Error("Dictionary request failed");
+      const text = await response.text();
+      return [language, text.split(/\\r?\\n/)
+        .map(word => word.normalize("NFC").trim())
+        .filter(Boolean)];
+    } catch (_) {
+      return [language, FALLBACK_WORDS[language]];
+    }
+  }));
+  results.forEach(([language, words]) => { state.dictionary[language] = words; });
+  state.dictionaryReady = true;
+  $("start-game").disabled = false;
+  $("game-message").textContent = "";
+}
+
 document.addEventListener("DOMContentLoaded", () => {
   $("start-game").addEventListener("click", generateRound);
+  loadDictionaries().catch(() => {
+    state.dictionaryReady = true;
+    $("start-game").disabled = false;
+    $("game-message").textContent = state.language === "vi" ? "Dùng bộ từ dự phòng." : "Using fallback words.";
+  });
   applyLanguage();
   $("sound-button").addEventListener("click", () => {
     state.soundOn = !state.soundOn;
