@@ -22,6 +22,13 @@ jobs:
         run: |
           node --check script.js
           node --check backend.js
+          node --check supabase-config.js
+
+      - name: Set up Deno
+        uses: denoland/setup-deno@v2
+
+      - name: Type-check Supabase Edge Function
+        run: deno check supabase/functions/alice-game/index.ts
 
       - name: Verify required game assets
         run: |
