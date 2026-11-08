@@ -335,7 +335,7 @@ function playTone(frequency) {
 function applyLanguage() {
   const vi = state.language === "vi";
   document.documentElement.lang = state.language;
-  $("subtitle").textContent = vi ? "Tìm những từ ẩn!" : "Find the hidden words!";\n  if (state.topic) $("topic-label").textContent = (vi ? "Chủ đề: " : "Topic: ") + state.topic.label;
+  $("subtitle").textContent = vi ? "Tìm những từ ẩn!" : "Find the hidden words!";\n  if (state.topic) { const selectedTopic = TOPICS.find(topic => topic.id === state.topic.id); $("topic-label").textContent = (vi ? "Chủ đề: " : "Topic: ") + (selectedTopic ? selectedTopic[state.language] : state.topic.label); }
   $("timer-label").textContent = vi ? "Thời gian" : "Time";
   $("score-label").textContent = vi ? "Điểm" : "Score";
   $("start-game").textContent = vi ? "Bắt đầu" : "Start Game";
