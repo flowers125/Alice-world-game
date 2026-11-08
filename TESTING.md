@@ -34,6 +34,9 @@ Very Hard mode:
 - [ ] Browser roles cannot directly read `dictionary_words`, `game_rounds`, `round_words`, `personal_bests`, or the `leaderboard` view.
 - [ ] Guest leaderboard requests use only the curated leaderboard RPC; no personal or round data is exposed.
 - [ ] Edge Function rejects requests without a valid user session.
+- [ ] Edge Function rejects repeated-cell selections and non-straight paths.
+- [ ] Online timer ends at the server-provided expiry time.
+- [ ] Signing out during an online round finishes and saves that round first.
 
 ## Deployment prerequisites
 - Configure Google OAuth in Supabase.
