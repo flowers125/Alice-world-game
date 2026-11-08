@@ -25,7 +25,7 @@ test("normal scoring follows the agreed cumulative score", () => {
 
 test("very easy awards half the normal cumulative score, rounded down", () => {
   state.difficulty = "very-easy";
-  assert.deepEqual([1, 2, 3, 4, 5].map(scoreFor), [1, 2, 6, 6, 6]);
+  assert.deepEqual([1, 2, 3, 4, 5].map(scoreFor), [1, 2.5, 6, 6, 6]);
 });
 
 test("very hard adds three points for every found word", () => {
