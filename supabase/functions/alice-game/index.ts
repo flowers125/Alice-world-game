@@ -52,11 +52,15 @@ function placeWord(board: string[][], word: string) {
   }
   return false;
 }
-function makeBoard(words: {word:string;normalized:string}[], language: string) {
+function makeBoard(words: {word:string;normalized:string}[], language: string, difficulty: string) {
   const board = Array.from({length:10},()=>Array(10).fill(""));
   const placed: string[] = [];
+  const minWordLength = difficulty === "very-hard" ? 4 : 2;
+  const targetLimit = difficulty === "very-hard" ? 28 : 16;
   for (const item of shuffle(words)) {
-    if (placed.length >= 28) break;
+    const length = Array.from(normalize(item.normalized)).length;
+    if (length < minWordLength || length > 10) continue;
+    if (placed.length >= targetLimit) break;
     if (placeWord(board,item.normalized)) placed.push(item.normalized);
   }
   const alphabet = language === "vi"
@@ -108,8 +112,12 @@ Deno.serve(async (req: Request) => {
         if (!data?.length || data.length<to-from+1) break;
       }
       if (!dictionary.length) return reply({error:"Dictionary is empty"},503);
-      const candidates = shuffle(dictionary.filter((x:any)=>Array.from(x.normalized || "").length>=2 && Array.from(x.normalized || "").length<=10));
-      const {board,placed} = makeBoard(candidates,language);
+      const minWordLength = difficulty === "very-hard" ? 4 : 2;
+      const candidates = shuffle(dictionary.filter((x:any)=>{
+        const length=Array.from(x.normalized || "").length;
+        return length>=minWordLength && length<=10;
+      }));
+      const {board,placed} = makeBoard(candidates,language,difficulty);
       if (placed.length < 5) return reply({error:"Not enough eligible dictionary words"},503);
       const started = new Date();
       const expires = new Date(started.getTime()+60000);
