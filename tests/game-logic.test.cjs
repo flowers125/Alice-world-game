@@ -38,15 +38,15 @@ test("Vietnamese normalization uses NFC, lowercase, and removes spaces", () => {
   assert.equal(Array.from(normalize(" ĐIỆN thoại ")).join(""), "điệnthoại");
 });
 
-test("word placement fits a ten-letter word inside the 10x10 board", () => {
-  const board = Array.from({ length: 10 }, () => Array(10).fill(""));
+test("word placement fits a ten-letter word inside the 15x20 board", () => {
+  const board = Array.from({ length: 15 }, () => Array(20).fill(""));
   assert.equal(placeWord(board, Array.from("abcdefghij")), true);
   const directions = [[0,1],[0,-1],[1,0],[-1,0],[1,1],[1,-1],[-1,1],[-1,-1]];
   const found = directions.some(([dr, dc]) =>
     board.some((row, r) => row.some((_, c) => {
       const letters = Array.from({ length: 10 }, (_, i) => {
         const rr = r + dr * i, cc = c + dc * i;
-        return rr < 0 || rr >= 10 || cc < 0 || cc >= 10 ? "" : board[rr][cc];
+        return rr < 0 || rr >= 15 || cc < 0 || cc >= 20 ? "" : board[rr][cc];
       });
       return letters.join("") === "abcdefghij";
     }))
@@ -59,13 +59,14 @@ test("words longer than the board are rejected", () => {
   assert.equal(placeWord(board, Array.from("abcdefghijk")), false);
 });
 
-test("Very Hard filters short words while Normal allows them", () => {
+test("all difficulty modes include valid short words", () => {
   state.language = "en";
-  const words = ["an", "cat", "word", "dream", "bright"];
-  const normal = selectCandidates(words, "normal").map(chars => chars.join(""));
-  const hard = selectCandidates(words, "very-hard").map(chars => chars.join(""));
-  assert.equal(normal.includes("an"), true);
-  assert.equal(selectCandidates(["hoa", "mùa hè", "lá"], "normal").some(chars => chars.join("") === "mùa hè"), false);
-  assert.equal(hard.some(word => word.length < 4), false);
-  assert.equal(hard.length, 3);
+  const words = ["no", "yes", "say", "cat", "word", "dream"];
+  for (const mode of ["very-easy", "normal", "very-hard"]) {
+    const candidates = selectCandidates(words, mode).map(chars => chars.join(""));
+    assert.equal(candidates.includes("no"), true, mode);
+    assert.equal(candidates.includes("yes"), true, mode);
+  }
+  assert.equal(selectCandidates(["hoa", "mùa hè", "lá"], "normal")
+    .some(chars => chars.join("") === "mùa hè"), false);
 });
