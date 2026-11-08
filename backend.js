@@ -6,7 +6,6 @@
     !window.ALICE_SUPABASE_ANON_KEY.includes("PASTE_");
 
   const localGenerateRound = generateRound;
-  const localEndSelection = endSelection;
   const localFinishRound = finishRound;
   let client = null;
   let session = null;
@@ -158,7 +157,6 @@
     finishPromise=(async()=>{
       clearInterval(state.timer);
       state.running=false;
-      state.pointerDown=false;
       state.selected=[];
       paintSelection();
       if(secureRound&&roundId){
