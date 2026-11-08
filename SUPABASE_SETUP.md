@@ -3,8 +3,10 @@
 Supabase project: `drxdsooffyadkjrbchxx`
 
 ## 1. Apply the database migration
-In the Supabase Dashboard, open **SQL Editor**, paste and run:
-`supabase/migrations/202611080001_alice_game_schema.sql`
+In the Supabase Dashboard, open **SQL Editor** and run these files in order:
+1. `supabase/migrations/202611080001_alice_game_schema.sql`
+2. `supabase/migrations/202611080002_atomic_word_claims.sql`
+3. `supabase/migrations/202611080003_profile_name_collision.sql`
 
 ## 2. Import dictionaries (run locally, never in the browser)
 Install Node.js, then from the repository root run:
