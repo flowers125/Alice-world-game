@@ -32,7 +32,9 @@
     $ui("sign-out").hidden=!signedIn;
     $ui("profile-form").hidden=!signedIn;
     if(!signedIn){
-      $ui("account-status").textContent=state.language==="vi"?"Đang chơi với tư cách khách.":"Playing as guest.";
+      $ui("account-status").textContent=state.language==="vi"
+        ?"Đang chơi với tư cách khách · Điểm không được lưu online."
+        :"Playing as guest · Scores are not saved online.";
       return;
     }
     const {data,error}=await client.from("profiles").select("display_name").eq("id",session.user.id).maybeSingle();
