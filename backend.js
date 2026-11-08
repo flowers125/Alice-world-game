@@ -81,6 +81,8 @@
       roundId=result.round_id;
       secureRound=true;
       state.grid=result.board;
+      state.topic=result.topic || null;
+      $ui("topic-label").textContent=(state.language==="vi"?"Chủ đề: ":"Topic: ")+(state.topic?.label || "");
       state.words=[];
       state.found.clear();
       state.selected=[];
