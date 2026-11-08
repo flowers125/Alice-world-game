@@ -40,7 +40,7 @@ The function uses the project-provided `SUPABASE_URL`, `SUPABASE_ANON_KEY`, and 
 In Supabase Dashboard → Authentication → Providers → Google, enable Google and enter the OAuth Client ID and Client Secret from Google Cloud Console. Add the deployed site URL to Authentication → URL Configuration → Redirect URLs.
 
 ## 5. Frontend public configuration
-The browser needs only the project URL and the **publishable/anon key**. Put them in `supabase-config.js` when the frontend integration is ready. Never use the service-role key in the browser.
+Open `supabase-config.js` and replace `PASTE_SUPABASE_PUBLISHABLE_OR_ANON_KEY_HERE` with the project publishable/anon key from Supabase Project Settings → API. The project URL is already set. This key is intended for browser use; never use the service-role key in the browser. The page loads the Supabase JS v2 client from jsDelivr.
 
 ## Security notes
 - The browser never receives the hidden answer list.
