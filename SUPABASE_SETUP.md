@@ -15,15 +15,15 @@ Install Node.js, then from the repository root run:
 npm install
 ```
 
-Set these environment variables locally:
-- `SUPABASE_URL=https://drxdsooffyadkjrbchxx.supabase.co`
-- `SUPABASE_SERVICE_ROLE_KEY=<service role key from Supabase Project Settings → API>`
+In Windows PowerShell, set the variables in the current terminal (paste the service-role key locally; do not send it in chat or commit it):
 
-Then run:
-
-```bash
+```powershell
+$env:SUPABASE_URL = "https://drxdsooffyadkjrbchxx.supabase.co"
+$env:SUPABASE_SERVICE_ROLE_KEY = "PASTE_SERVICE_ROLE_KEY_HERE"
 npm run import:dictionaries
 ```
+
+The importer uploads the word lists in batches. Keep the service-role key only in your local terminal environment.
 
 Never commit the service-role key or put it in frontend code.
 
