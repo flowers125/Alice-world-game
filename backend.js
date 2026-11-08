@@ -51,7 +51,7 @@
     if(requestId!==accountRequest || session?.user?.id!==currentUserId)return;
     if(error) console.error(error);
     state.displayName=data?.display_name||"";
-    const nameIsLocked=!!data?.display_name_set_at;
+    const nameIsLocked=!!data?.display_name_set_at || !!data?.display_name?.trim();
     $ui("profile-form").hidden=nameIsLocked;
     if(!nameIsLocked){
       $ui("display-name").value=data?.display_name ||
