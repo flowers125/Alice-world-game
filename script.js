@@ -114,7 +114,7 @@ const normalize = word => Array.from(
 function buildLetterWeights(words) {
   const counts = new Map();
   for (const raw of words) {
-    if (/\\s/u.test(raw.trim())) continue;
+    if (/\s/u.test(raw.trim())) continue;
     for (const letter of Array.from(raw.normalize("NFC").toLocaleLowerCase())) {
       counts.set(letter, (counts.get(letter) || 0) + 1);
     }
