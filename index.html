@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <meta name="theme-color" content="#eee9f7">
   <title>Alice Word Game</title>
-  <link rel="stylesheet" href="style.css?v=5456b6b">
+  <link rel="stylesheet" href="style.css?v=8d20021">
 </head>
 <body>
   <main class="container">
@@ -53,8 +53,15 @@
       </div>
 
       <div class="game-info">
-        <p><span id="timer-label">Thời gian</span>: <strong id="timer">150</strong></p>
+        <p><span id="timer-label">Thời gian</span>: <strong id="timer">180</strong></p>
         <p><span id="score-label">Điểm</span>: <strong id="score">0</strong></p>
+      </div>
+      <div class="word-builder-panel">
+        <div id="word-builder" aria-live="polite">Chọn chữ cái để ghép từ</div>
+        <div class="word-builder-actions">
+          <button id="clear-word" class="secondary-button" type="button" disabled>Xóa chọn</button>
+          <button id="confirm-word" type="button" disabled>OK</button>
+        </div>
       </div>
 
       <p id="topic-label" class="topic-label" hidden></p><div class="game-layout"><div class="board-column"><div id="game-grid" aria-label="Word search grid"></div></div><aside class="leaderboard-panel"><h2>Alice Leader · Top 20</h2><div class="leaderboard-controls"><select id="inline-leaderboard-language" aria-label="Leaderboard language"><option value="vi">Tiếng Việt</option><option value="en">English</option></select><select id="inline-leaderboard-difficulty" aria-label="Leaderboard difficulty"><option value="very-easy">Rất dễ</option><option value="normal" selected>Bình thường</option><option value="very-hard">Rất khó</option></select></div><ol id="inline-leaderboard-list"><li>Đang tải...</li></ol></aside></div>
@@ -92,7 +99,7 @@
 
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <script src="supabase-config.js"></script>
-  <script src="script.js?v=9fc00c5"></script>
-  <script src="backend.js?v=9fc00c5"></script>
+  <script src="script.js?v=8d20021"></script>
+  <script src="backend.js?v=8d20021"></script>
 </body>
 </html>
