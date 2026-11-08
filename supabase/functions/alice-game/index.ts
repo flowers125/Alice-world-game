@@ -48,66 +48,36 @@ function placeWord(board: string[][], word: string) {
   }
   return false;
 }
+const TOPICS = [
+  {id:"fruit",vi:"Hoa quả",en:"Fruits",words:{vi:["táo","cam","chuối","xoài","lê","ổi","mít","dừa","nho","đào","dưa","mận"],en:["apple","banana","orange","mango","pear","grape","lemon","peach","fruit","melon","berry","plum"]}},
+  {id:"ocean",vi:"Đại dương",en:"Ocean",words:{vi:["biển","cá","tôm","cua","sò","sóng","nước","thuyền","ốc","mực"],en:["ocean","sea","fish","crab","wave","water","ship","whale","shark","coral","shell","squid"]}},
+  {id:"cooking",vi:"Nấu ăn",en:"Cooking",words:{vi:["cơm","canh","thịt","trứng","bánh","sữa","muối","đường","dầu","bếp","nồi","chảo","rau","mì"],en:["rice","soup","meat","egg","bread","milk","salt","sugar","oil","kitchen","pot","pan","food","cook"]}},
+  {id:"colors",vi:"Màu sắc",en:"Colors",words:{vi:["đỏ","xanh","tím","vàng","đen","trắng","hồng","nâu","xám","cam"],en:["red","blue","purple","yellow","black","white","pink","brown","gray","green","orange"]}},
+  {id:"animals",vi:"Động vật",en:"Animals",words:{vi:["mèo","chó","voi","hổ","gấu","thỏ","chim","dê","bò","cá","ngựa"],en:["cat","dog","elephant","tiger","bear","rabbit","bird","goat","cow","fish","horse","lion"]}},
+  {id:"nature",vi:"Thiên nhiên",en:"Nature",words:{vi:["hoa","lá","cây","núi","sông","mưa","gió","mây","trăng","sao","đất","cỏ"],en:["flower","leaf","tree","mountain","river","rain","wind","cloud","moon","star","earth","grass"]}},
+  {id:"school",vi:"Trường học",en:"School",words:{vi:["sách","bút","vở","bàn","ghế","lớp","thầy","cô","học","bảng","giấy","mực"],en:["book","pen","notebook","desk","chair","class","teacher","school","study","board","paper","ink"]}},
+  {id:"names",vi:"Tên người",en:"Names",words:{vi:["an","bình","lan","mai","nam","minh","linh","hoa","hùng","ngọc","phúc","vy"],en:["alice","anna","ben","david","emma","jack","james","leo","lily","lucy","mia","noah"]}}
+];
+
 function makeBoard(words: {word:string;normalized:string}[], language: string, difficulty: string) {
   const board = Array.from({length:15},()=>Array(20).fill(""));
   const placed: string[] = [];
-  const targetLimit = difficulty === "very-hard" ? 42 : 36;
-  const eligible = shuffle(words.filter((item:any) => {
+  const targetLimit = Math.min(difficulty === "very-hard" ? 42 : 36, words.length);
+  const eligible = shuffle(words.filter(item => {
     const length = Array.from(normalize(item.normalized)).length;
     return length >= 2 && length <= 20;
-  }));
-  // Reserve board slots for short words in every difficulty. Sorting the
-  // final selection longest-first still makes placement reliable.
-  const buckets = [
-    { min: 2, max: 3, count: difficulty === "very-hard" ? 14 : 12 },
-    { min: 4, max: 5, count: difficulty === "very-hard" ? 10 : 8 },
-    { min: 6, max: 7, count: difficulty === "very-hard" ? 9 : 8 },
-    { min: 8, max: 20, count: difficulty === "very-hard" ? 9 : 8 }
-  ];
-  const preferred = language === "vi"
-    ? ["cá","cơm","đèn","thuyền","hoa","lá","sữa","nhà"]
-    : ["say","no","yes","bad"];
-  const selected:any[] = preferred
-    .map(word => eligible.find((item:any) => normalize(item.normalized) === normalize(word)))
-    .filter(Boolean);
-  const used = new Set<string>(selected.map((item:any) => normalize(item.normalized)));
-  for (const bucket of buckets) {
-    const alreadyChosen = selected.filter((item:any) => {
-      const length = Array.from(normalize(item.normalized)).length;
-      return length >= bucket.min && length <= bucket.max;
-    }).length;
-    const needed = Math.max(0,bucket.count-alreadyChosen);
-    const group = shuffle(eligible.filter((item:any) => {
-      const length = Array.from(normalize(item.normalized)).length;
-      return length >= bucket.min && length <= bucket.max && !used.has(normalize(item.normalized));
-    })).slice(0,needed);
-    for (const item of group) {
-      const key = normalize(item.normalized);
-      if (!used.has(key)) { selected.push(item); used.add(key); }
-    }
-  }
-  if (selected.length < targetLimit) {
-    for (const item of shuffle(eligible)) {
-      const key = normalize(item.normalized);
-      if (used.has(key)) continue;
-      selected.push(item); used.add(key);
-      if (selected.length >= targetLimit) break;
-    }
-  }
-  const orderedWords = selected.sort((a:any,b:any)=>
-    Array.from(normalize(b.normalized)).length-Array.from(normalize(a.normalized)).length
-  );
-  for (const item of orderedWords) {
+  })).sort((a,b)=>Array.from(normalize(b.normalized)).length-Array.from(normalize(a.normalized)).length);
+  for (const item of eligible) {
     if (placed.length >= targetLimit) break;
     if (placeWord(board,item.normalized)) placed.push(item.normalized);
   }
   const alphabet = language === "vi"
-    ? Array.from("aăâbcdđeêghiklmnoôơpqrstuưvxyáàảãạắằẳẵặấầẩẫậéèẻẽẹếềểễệíìỉĩịóòỏõọốồổỗộớờởỡợúùủũụứừửữựýỳỷỹỵ")
+    ? Array.from("aăâbcdđeêghiklmnoôơpqrstuưvxyáàảãạắằẳẵặấầẩẫậéèẻẽẹếềểễệíìỉĩịóòỏõọốồổỗộớờởỡợúùủụứừửữựýỳỷỹỵ")
     : Array.from("abcdefghijklmnopqrstuvwxyz");
   for (let r=0;r<15;r++) for (let c=0;c<20;c++) {
     if (!board[r][c]) board[r][c]=alphabet[Math.floor(Math.random()*alphabet.length)];
   }
-  return {board, placed};
+  return {board,placed};
 }
 
 Deno.serve(async (req: Request) => {
@@ -133,38 +103,24 @@ Deno.serve(async (req: Request) => {
       if (countError) throw countError;
       if (!dictionaryCount) return reply({error:"Dictionary is empty"},503);
 
-      // Read a shuffled window in pages so projects with a 1,000-row API cap
-      // still use a broad slice of the dictionary instead of only page one.
-      const sampleSize = Math.min(5000,dictionaryCount);
-      const maxOffset = Math.max(0,dictionaryCount-sampleSize);
-      const startOffset = Math.floor(Math.random()*(maxOffset+1));
-      const dictionary:any[] = [];
-      for (let offset=0; offset<sampleSize; offset+=1000) {
-        const from = startOffset+offset;
-        const to = Math.min(startOffset+sampleSize-1,from+999);
-        const {data,error} = await admin.from("dictionary_words")
-          .select("word,normalized").eq("language",language).eq("is_active",true).not("word","ilike","% %")
-          .order("normalized").range(from,to);
-        if (error) throw error;
-        dictionary.push(...(data||[]));
-        if (!data?.length || data.length<to-from+1) break;
+      const availableTopics = shuffle(TOPICS);
+      let selectedTopic:any = null;
+      let candidates:any[] = [];
+      for (const topic of availableTopics) {
+        const topicWords = topic.words[language as "vi"|"en"] as string[];
+        const {data:topicRows,error:topicError} = await admin.from("dictionary_words")
+          .select("word,normalized").eq("language",language).eq("is_active",true)
+          .in("normalized",topicWords);
+        if (topicError) throw topicError;
+        const found = new Map((topicRows||[]).map((item:any)=>[normalize(item.normalized),item]));
+        const topicCandidates = topicWords.map(word => found.get(normalize(word)) || (topic.id==="names" ? {word,normalized:word} : null)).filter(Boolean);
+        if (topicCandidates.length >= 5) {
+          selectedTopic = topic;
+          candidates = topicCandidates;
+          break;
+        }
       }
-      if (!dictionary.length) return reply({error:"Dictionary is empty"},503);
-      // Always include the user's requested everyday short-word examples
-      // even when the random dictionary window does not contain them.
-      const preferredWords = language === "vi"
-        ? ["cá","cơm","đèn","thuyền","hoa","lá","sữa","nhà"]
-        : ["say","no","yes","bad"];
-      const {data:preferredRows,error:preferredError} = await admin.from("dictionary_words")
-        .select("word,normalized").eq("language",language).eq("is_active",true)
-        .in("normalized",preferredWords);
-      if (preferredError) throw preferredError;
-      dictionary.push(...(preferredRows||[]));
-      const minWordLength = 2;
-      const candidates = shuffle(dictionary.filter((x:any)=>{
-        const length=Array.from(x.normalized || "").length;
-        return length>=minWordLength && length<=10;
-      }));
+      if (!selectedTopic || candidates.length < 5) return reply({error:"Not enough words for a topic"},503);
       const {board,placed} = makeBoard(candidates,language,difficulty);
       if (placed.length < 5) return reply({error:"Not enough eligible dictionary words"},503);
       const started = new Date();
@@ -174,7 +130,7 @@ Deno.serve(async (req: Request) => {
         started_at:started.toISOString(),expires_at:expires.toISOString()
       }).select("id,started_at,expires_at").single();
       if (roundError) throw roundError;
-      return reply({round_id:round.id,board,started_at:round.started_at,expires_at:round.expires_at,seconds:150});
+      return reply({round_id:round.id,board,topic:{id:selectedTopic.id,label:selectedTopic[language]},started_at:round.started_at,expires_at:round.expires_at,seconds:150});
     }
 
     if (action === "claim") {
