@@ -303,7 +303,10 @@ function applyLanguage() {
   $("language").setAttribute("aria-label", vi ? "Ngôn ngữ" : "Language");
   $("difficulty").setAttribute("aria-label", vi ? "Độ khó" : "Difficulty");
   if (state.user) {
-    $("account-status").textContent = vi ? "Đã đăng nhập Google." : "Signed in with Google.";
+    const name = state.displayName || "";
+    $("account-status").textContent = vi
+      ? (name ? "Đã đăng nhập · Tên: " + name : "Đã đăng nhập Google · Hãy đặt tên hiển thị một lần.")
+      : (name ? "Signed in · Name: " + name : "Signed in with Google · Choose your display name once.");
   } else if (!window.ALICE_SUPABASE_URL || !window.ALICE_SUPABASE_ANON_KEY) {
     $("account-status").textContent = vi
       ? "Chế độ khách · Chưa cấu hình Supabase."
