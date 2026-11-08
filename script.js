@@ -286,8 +286,8 @@ function applyLanguage() {
   $("difficulty").options[2].textContent = vi ? "Rất khó" : "Very Hard";
   $("help-title").textContent = vi ? "Cách chơi" : "How to play";
   $("help-copy").textContent = vi
-    ? "Tìm các từ ẩn bằng cách kéo qua những chữ cái theo đường thẳng: ngang, dọc hoặc chéo. Từ có thể xuất hiện theo cả hai chiều. Mỗi từ chỉ được tính điểm một lần. Bạn có 150 giây! Rất dễ nhận một nửa điểm của Bình thường; Rất khó yêu cầu từ dài ít nhất 4 chữ và thưởng thêm 3 điểm mỗi từ."
-    : "Find hidden words by dragging in a straight line: horizontally, vertically, or diagonally. Words may appear in either direction. Each word scores only once. You have 150 seconds! Very Hard has more words, with a minimum length of 4 letters, and awards 3 bonus points per word.";
+    ? "Tìm các từ đơn ẩn bằng cách kéo theo đường thẳng: ngang, dọc hoặc chéo. Từ có thể xuất hiện theo cả hai chiều. Từ ngắn như cá, nhà, lá, no, yes vẫn hợp lệ ở mọi chế độ. Mỗi từ chỉ được tính một lần. Bạn có 150 giây!"
+    : "Find single hidden words by dragging in a straight line: horizontally, vertically, or diagonally. Words can appear in either direction. Short words such as no, yes, cat and sun are valid in every mode. Each word counts once. You have 150 seconds!";
   $("close-help").textContent = vi ? "Đã hiểu" : "Got it";
   $("google-sign-in").textContent = vi ? "Đăng nhập Google" : "Sign in with Google";
   $("sign-out").textContent = vi ? "Đăng xuất" : "Sign out";
