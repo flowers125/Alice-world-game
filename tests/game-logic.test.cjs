@@ -13,10 +13,10 @@ const sandbox = {
   clearInterval() {},
 };
 vm.runInNewContext(
-  source + "\nglobalThis.__gameTest = { state, scoreFor, normalize, placeWord };",
+  source + "\nglobalThis.__gameTest = { state, scoreFor, normalize, placeWord, selectCandidates };",
   sandbox,
 );
-const { state, scoreFor, normalize, placeWord } = sandbox.__gameTest;
+const { state, scoreFor, normalize, placeWord, selectCandidates } = sandbox.__gameTest;
 
 test("normal scoring follows the agreed cumulative score", () => {
   state.difficulty = "normal";
@@ -52,4 +52,14 @@ test("word placement fits a ten-letter word inside the 10x10 board", () => {
 test("words longer than the board are rejected", () => {
   const board = Array.from({ length: 10 }, () => Array(10).fill(""));
   assert.equal(placeWord(board, Array.from("abcdefghijk")), false);
+});
+
+test("Very Hard filters short words while Normal allows them", () => {
+  state.language = "en";
+  const words = ["an", "cat", "word", "dream", "bright"];
+  const normal = selectCandidates(words, "normal").map(chars => chars.join(""));
+  const hard = selectCandidates(words, "very-hard").map(chars => chars.join(""));
+  assert.equal(normal.includes("an"), true);
+  assert.equal(hard.some(word => word.length < 4), false);
+  assert.equal(hard.length, 3);
 });
