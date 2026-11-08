@@ -225,7 +225,18 @@
       const {error}=await client.auth.signInWithOAuth({provider:"google",options:{redirectTo:window.location.origin}});
       if(error)$ui("account-status").textContent=error.message;
     });
-    $ui("sign-out").addEventListener("click",async()=>{if(client)await client.auth.signOut();});
+    $ui("sign-out").addEventListener("click",async()=>{
+      if(!client)return;
+      if(startingRound){
+        $ui("account-status").textContent=state.language==="vi"
+          ?"Hãy đợi lượt chơi khởi tạo xong rồi đăng xuất."
+          :"Wait for the round to finish loading before signing out.";
+        return;
+      }
+      if(finishPromise) await finishPromise;
+      else if(secureRound&&state.running) await finishRound();
+      await client.auth.signOut();
+    });
     $ui("profile-form").addEventListener("submit",saveProfile);
     $ui("leaderboard-button").addEventListener("click",async()=>{
       $ui("leaderboard-dialog").showModal();await showLeaderboard();
