@@ -11,6 +11,38 @@ const FALLBACK_WORDS = {
 };
 const DICTIONARY_URLS = { vi: "dictionaries/vi.txt", en: "dictionaries/en.txt" };
 
+const TOPICS = [
+  { id:"fruit", vi:"Hoa quả", en:"Fruits", words:{
+    vi:["táo","cam","chuối","xoài","lê","ổi","mít","dừa","nho","đào","dưa","mận"],
+    en:["apple","banana","orange","mango","pear","grape","lemon","peach","fruit","melon","berry","plum"]}},
+  { id:"ocean", vi:"Đại dương", en:"Ocean", words:{
+    vi:["biển","cá","tôm","cua","sò","sóng","nước","thuyền","cá voi","san hô","ốc","mực"],
+    en:["ocean","sea","fish","crab","wave","water","ship","whale","shark","coral","shell","squid"]}},
+  { id:"cooking", vi:"Nấu ăn", en:"Cooking", words:{
+    vi:["cơm","canh","thịt","trứng","bánh","sữa","muối","đường","dầu","bếp","nồi","chảo","rau","mì"],
+    en:["rice","soup","meat","egg","bread","milk","salt","sugar","oil","kitchen","pot","pan","food","cook"]}},
+  { id:"colors", vi:"Màu sắc", en:"Colors", words:{
+    vi:["đỏ","xanh","tím","vàng","đen","trắng","hồng","nâu","xám","cam"],
+    en:["red","blue","purple","yellow","black","white","pink","brown","gray","green","orange"]}},
+  { id:"animals", vi:"Động vật", en:"Animals", words:{
+    vi:["mèo","chó","voi","hổ","gấu","thỏ","chim","dê","bò","cá","ngựa","sư tử"],
+    en:["cat","dog","elephant","tiger","bear","rabbit","bird","goat","cow","fish","horse","lion"]}},
+  { id:"nature", vi:"Thiên nhiên", en:"Nature", words:{
+    vi:["hoa","lá","cây","núi","sông","mưa","gió","mây","trăng","sao","đất","cỏ"],
+    en:["flower","leaf","tree","mountain","river","rain","wind","cloud","moon","star","earth","grass"]}},
+  { id:"school", vi:"Trường học", en:"School", words:{
+    vi:["sách","bút","vở","bàn","ghế","lớp","thầy","cô","học","bảng","giấy","mực"],
+    en:["book","pen","notebook","desk","chair","class","teacher","school","study","board","paper","ink"]}},
+  { id:"names", vi:"Tên người", en:"Names", words:{
+    vi:["an","bình","lan","mai","nam","minh","linh","hoa","hùng","ngọc","phúc","vy"],
+    en:["alice","anna","ben","david","emma","jack","james","leo","lily","lucy","mia","noah"]}}
+];
+function chooseTopic(language) {
+  const topic = TOPICS[Math.floor(Math.random()*TOPICS.length)];
+  return {id:topic.id,label:topic[language],words:topic.words[language]};
+}
+
+
 const ALPHABETS = {
   vi: Array.from("aăâbcdđeêghiklmnoôơpqrstuưvxy"),
   en: Array.from("abcdefghijklmnopqrstuvwxyz")
@@ -30,6 +62,7 @@ const state = {
   difficulty: "normal",
   grid: [],
   words: [],
+  topic: null,
   dictionary: { vi: [], en: [] },
   dictionaryReady: false,
   found: new Set(),
@@ -139,7 +172,9 @@ function generateRound() {
   const sourceWords = state.dictionary[state.language].length
     ? state.dictionary[state.language]
     : FALLBACK_WORDS[state.language];
-  const candidates = selectCandidates(sourceWords, state.difficulty);
+  state.topic = chooseTopic(state.language);
+  const topicWords = new Set(state.topic.words.map(word => normalize(word).join("")));
+  const candidates = selectCandidates(sourceWords.filter(word => topicWords.has(normalize(word).join(""))), state.difficulty);
 
   state.words = [];
   for (const word of candidates) {
@@ -300,7 +335,7 @@ function playTone(frequency) {
 function applyLanguage() {
   const vi = state.language === "vi";
   document.documentElement.lang = state.language;
-  $("subtitle").textContent = vi ? "Tìm những từ ẩn!" : "Find the hidden words!";
+  $("subtitle").textContent = vi ? "Tìm những từ ẩn!" : "Find the hidden words!";\n  if (state.topic) $("topic-label").textContent = (vi ? "Chủ đề: " : "Topic: ") + state.topic.label;
   $("timer-label").textContent = vi ? "Thời gian" : "Time";
   $("score-label").textContent = vi ? "Điểm" : "Score";
   $("start-game").textContent = vi ? "Bắt đầu" : "Start Game";
