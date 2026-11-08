@@ -54,9 +54,9 @@ test("word placement fits a ten-letter word inside the 15x20 board", () => {
   assert.equal(found, true);
 });
 
-test("words longer than the board are rejected", () => {
-  const board = Array.from({ length: 10 }, () => Array(10).fill(""));
-  assert.equal(placeWord(board, Array.from("abcdefghijk")), false);
+test("words longer than the supported maximum are rejected", () => {
+  const board = Array.from({ length: 15 }, () => Array(20).fill(""));
+  assert.equal(placeWord(board, Array.from("abcdefghijklmnopqrstu")), false);
 });
 
 test("all difficulty modes include valid short words", () => {
