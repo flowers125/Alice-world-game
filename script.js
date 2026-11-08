@@ -96,10 +96,13 @@ function generateRound() {
   const sourceWords = state.dictionary[state.language].length
     ? state.dictionary[state.language]
     : FALLBACK_WORDS[state.language];
+  const veryHard = state.difficulty === "very-hard";
+  const minWordLength = veryHard ? 4 : 2;
+  const targetLimit = veryHard ? 28 : 16;
   const candidates = shuffle([...new Set(sourceWords.map(normalize)
-    .filter(w => w.length >= 2 && w.length <= SIZE)
+    .filter(w => w.length >= minWordLength && w.length <= SIZE)
     .map(w => w.join("")))])
-    .slice(0, 34)
+    .slice(0, targetLimit)
     .map(word => Array.from(word))
     .sort((a,b) => b.length - a.length);
 
