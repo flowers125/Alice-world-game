@@ -57,7 +57,7 @@ const normalize = word => Array.from(
 
 function scoreFor(count) {
   const base = count === 1 ? 2 : count === 2 ? 5 : count >= 3 ? 12 : 0;
-  if (state.difficulty === "very-easy") return Math.floor(base / 2);
+  if (state.difficulty === "very-easy") return base / 2;
   return base + (state.difficulty === "very-hard" ? count * 3 : 0);
 }
 
