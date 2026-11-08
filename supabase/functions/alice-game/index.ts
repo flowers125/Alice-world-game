@@ -6,6 +6,7 @@ const cors = {
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
   "Access-Control-Allow-Methods": "POST, OPTIONS",
   "Content-Type": "application/json",
+  "Cache-Control": "no-store",
 };
 const reply = (data: unknown, status = 200) =>
   new Response(JSON.stringify(data), { status, headers: cors });
