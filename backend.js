@@ -228,7 +228,7 @@
       list.appendChild(li);return;
     }
     if(!data?.length){
-      const li=document.createElement("li");li.textContent=vi?"Chưa có dữ liệu.":"No scores yet.";list.appendChild(li);return;
+      const li=document.createElement("li");li.textContent=vi?"Chưa có dữ liệu.":"No scores yet.";lists.forEach(list=>list.appendChild(li.cloneNode(true)));return;
     }
     data.forEach(row=>{
       const li=document.createElement("li");
