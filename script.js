@@ -290,7 +290,7 @@ async function loadDictionaries() {
       const response = await fetch(DICTIONARY_URLS[language], { cache: "no-cache" });
       if (!response.ok) throw new Error("Dictionary request failed");
       const text = await response.text();
-      return [language, text.split(/\\r?\\n/)
+      return [language, text.split(/\r?\n/)
         .map(word => word.normalize("NFC").trim())
         .filter(Boolean)];
     } catch (_) {
