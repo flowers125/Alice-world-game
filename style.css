@@ -98,3 +98,9 @@ dialog { max-height: 85vh; overflow: auto; }
   .game-info { gap: 6px; padding: 11px 6px; }
   .grid-cell { font-size: clamp(11px, 4vw, 20px); }
 }
+
+
+/* Random, gentle floral and animal artwork behind the game. */
+.ambient-art { position:fixed; inset:0; overflow:hidden; pointer-events:none; z-index:0; opacity:.16; }
+.ambient-art span { position:absolute; display:block; filter:saturate(.8); }
+.container { position:relative; z-index:1; }
