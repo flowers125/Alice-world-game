@@ -64,7 +64,7 @@ function scoreFor(count) {
 function canPlace(grid, letters, row, col, dr, dc) {
   for (let i = 0; i < letters.length; i++) {
     const r = row + dr * i, c = col + dc * i;
-    if (r < 0 || r >= SIZE || c < 0 || c >= SIZE) return false;
+    if (r < 0 || r >= ROWS || c < 0 || c >= COLS) return false;
     if (grid[r][c] && grid[r][c] !== letters[i]) return false;
   }
   return true;
@@ -72,8 +72,8 @@ function canPlace(grid, letters, row, col, dr, dc) {
 
 function placeWord(grid, letters) {
   const starts = [];
-  for (let r = 0; r < SIZE; r++) {
-    for (let c = 0; c < SIZE; c++) {
+  for (let r = 0; r < ROWS; r++) {
+    for (let c = 0; c < COLS; c++) {
       for (const [dr, dc] of DIRECTIONS) starts.push([r,c,dr,dc]);
     }
   }
