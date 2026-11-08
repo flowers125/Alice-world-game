@@ -30,12 +30,12 @@ function shuffle<T>(items: T[]) {
 function placeWord(board: string[][], word: string) {
   const dirs = shuffle([[0,1],[1,0],[1,1],[1,-1],[-1,0],[0,-1],[-1,-1],[-1,1]]);
   const letters = Array.from(normalize(word));
-  if (!letters.length || letters.length > 10) return false;
+  if (!letters.length || letters.length > 20) return false;
   for (const [dr, dc] of dirs) {
-    for (const [r,c] of shuffle(Array.from({length:100},(_,i)=>[Math.floor(i/10),i%10]))) {
+    for (const [r,c] of shuffle(Array.from({length:300},(_,i)=>[Math.floor(i/20),i%20]))) {
       const er = r + dr * (letters.length - 1);
       const ec = c + dc * (letters.length - 1);
-      if (er < 0 || er >= 10 || ec < 0 || ec >= 10) continue;
+      if (er < 0 || er >= 15 || ec < 0 || ec >= 20) continue;
       let fits = true;
       for (let i=0;i<letters.length;i++) {
         const existing = board[r+dr*i][c+dc*i];
@@ -49,23 +49,23 @@ function placeWord(board: string[][], word: string) {
   return false;
 }
 function makeBoard(words: {word:string;normalized:string}[], language: string, difficulty: string) {
-  const board = Array.from({length:10},()=>Array(10).fill(""));
+  const board = Array.from({length:15},()=>Array(20).fill(""));
   const placed: string[] = [];
   const minWordLength = difficulty === "very-hard" ? 4 : 2;
-  const targetLimit = difficulty === "very-hard" ? 28 : 16;
+  const targetLimit = difficulty === "very-hard" ? 42 : 36;
   const orderedWords = shuffle(words).sort((a,b)=>
     Array.from(normalize(b.normalized)).length-Array.from(normalize(a.normalized)).length
   );
   for (const item of orderedWords) {
     const length = Array.from(normalize(item.normalized)).length;
-    if (length < minWordLength || length > 10) continue;
+    if (length < minWordLength || length > 20) continue;
     if (placed.length >= targetLimit) break;
     if (placeWord(board,item.normalized)) placed.push(item.normalized);
   }
   const alphabet = language === "vi"
     ? Array.from("aăâbcdđeêghiklmnoôơpqrstuưvxyáàảãạắằẳẵặấầẩẫậéèẻẽẹếềểễệíìỉĩịóòỏõọốồổỗộớờởỡợúùủũụứừửữựýỳỷỹỵ")
     : Array.from("abcdefghijklmnopqrstuvwxyz");
-  for (let r=0;r<10;r++) for (let c=0;c<10;c++) {
+  for (let r=0;r<15;r++) for (let c=0;c<20;c++) {
     if (!board[r][c]) board[r][c]=alphabet[Math.floor(Math.random()*alphabet.length)];
   }
   return {board, placed};
@@ -131,14 +131,14 @@ Deno.serve(async (req: Request) => {
     if (action === "claim") {
       const roundId = String(body.round_id || "");
       const cells = body.cells;
-      if (!roundId || !Array.isArray(cells) || cells.length < 2 || cells.length > 10) return reply({error:"Invalid selection"},400);
+      if (!roundId || !Array.isArray(cells) || cells.length < 2 || cells.length > 20) return reply({error:"Invalid selection"},400);
       const {data:round,error:roundError} = await admin.from("game_rounds")
         .select("id,user_id,language,difficulty,board,target_words,expires_at,status")
         .eq("id",roundId).eq("user_id",user.id).maybeSingle();
       if (roundError) throw roundError;
       if (!round || round.status !== "active" || Date.now() > Date.parse(round.expires_at)) return reply({error:"Round expired"},410);
       const path = cells.map((p:any)=>({r:Number(p.r),c:Number(p.c)}));
-      if (path.some((p:any)=>!Number.isInteger(p.r)||!Number.isInteger(p.c)||p.r<0||p.r>9||p.c<0||p.c>9)) return reply({error:"Invalid cell"},400);
+      if (path.some((p:any)=>!Number.isInteger(p.r)||!Number.isInteger(p.c)||p.r<0||p.r>14||p.c<0||p.c>19)) return reply({error:"Invalid cell"},400);
       const dr = path[1].r-path[0].r, dc=path[1].c-path[0].c;
       if (dr===0 && dc===0) return reply({error:"Selection must contain distinct cells"},400);
       if (!(dr===0||dc===0||Math.abs(dr)===Math.abs(dc))) return reply({error:"Path must be straight"},400);
