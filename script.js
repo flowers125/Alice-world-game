@@ -3,7 +3,7 @@
 const ROWS = 15;
 const COLS = 20;
 const MAX_WORD_LENGTH = 20;
-const ROUND_SECONDS = 60;
+const ROUND_SECONDS = 150;
 
 const FALLBACK_WORDS = {
   vi: ["alice","cá","cơm","đèn","thuyền","hoa","lá","sữa","nhà","nắng","mây","trăng","biển","rừng","sao","mưa","gió","sách","mèo","chim","cây","đường","nước","bình minh","cầu vồng"],
@@ -286,8 +286,8 @@ function applyLanguage() {
   $("difficulty").options[2].textContent = vi ? "Rất khó" : "Very Hard";
   $("help-title").textContent = vi ? "Cách chơi" : "How to play";
   $("help-copy").textContent = vi
-    ? "Tìm các từ ẩn bằng cách kéo qua những chữ cái theo đường thẳng: ngang, dọc hoặc chéo. Từ có thể xuất hiện theo cả hai chiều. Mỗi từ chỉ được tính điểm một lần. Bạn có 60 giây! Rất dễ nhận một nửa điểm của Bình thường; Rất khó yêu cầu từ dài ít nhất 4 chữ và thưởng thêm 3 điểm mỗi từ."
-    : "Find hidden words by dragging in a straight line: horizontally, vertically, or diagonally. Words may appear in either direction. Each word scores only once. You have 60 seconds! Very Hard has more words, with a minimum length of 4 letters, and awards 3 bonus points per word.";
+    ? "Tìm các từ ẩn bằng cách kéo qua những chữ cái theo đường thẳng: ngang, dọc hoặc chéo. Từ có thể xuất hiện theo cả hai chiều. Mỗi từ chỉ được tính điểm một lần. Bạn có 150 giây! Rất dễ nhận một nửa điểm của Bình thường; Rất khó yêu cầu từ dài ít nhất 4 chữ và thưởng thêm 3 điểm mỗi từ."
+    : "Find hidden words by dragging in a straight line: horizontally, vertically, or diagonally. Words may appear in either direction. Each word scores only once. You have 150 seconds! Very Hard has more words, with a minimum length of 4 letters, and awards 3 bonus points per word.";
   $("close-help").textContent = vi ? "Đã hiểu" : "Got it";
   $("google-sign-in").textContent = vi ? "Đăng nhập Google" : "Sign in with Google";
   $("sign-out").textContent = vi ? "Đăng xuất" : "Sign out";
