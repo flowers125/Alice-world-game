@@ -370,6 +370,7 @@ function finishRound() {
   state.pointerDown = false;
   state.selected = [];
   paintSelection();
+  renderWordBuilder();
   $("game-message").textContent = state.language === "vi"
     ? `Hết giờ! Tìm được ${state.found.size} từ. Điểm: ${state.score}`
     : `Time's up! You found ${state.found.size} words. Score: ${state.score}`;
