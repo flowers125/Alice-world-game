@@ -58,7 +58,7 @@ Until Google OAuth is configured, users can play as guests. Guest scores are loc
 - 10×10 board; words can run horizontally, vertically, or diagonally, in either direction.
 - Each round lasts 60 seconds.
 - Normal scoring: 2 points for the first word, 3 additional points for the second (5 total), then 7 additional points for the third and later words (12 total from the third onward).
-- Very Hard adds 3 points per found word to the normal cumulative score: 5, 11, 21, 24, 27, ...
+- Very Hard creates a denser board with up to 28 hidden words and excludes words shorter than 4 letters; Normal allows shorter words and targets up to 16. Very Hard also adds 3 points per found word to the normal cumulative score: 5, 11, 21, 24, 27, ...
 
 ## Dictionary
 
