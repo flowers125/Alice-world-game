@@ -53,7 +53,10 @@ function makeBoard(words: {word:string;normalized:string}[], language: string, d
   const placed: string[] = [];
   const minWordLength = difficulty === "very-hard" ? 4 : 2;
   const targetLimit = difficulty === "very-hard" ? 28 : 16;
-  for (const item of shuffle(words)) {
+  const orderedWords = shuffle(words).sort((a,b)=>
+    Array.from(normalize(b.normalized)).length-Array.from(normalize(a.normalized)).length
+  );
+  for (const item of orderedWords) {
     const length = Array.from(normalize(item.normalized)).length;
     if (length < minWordLength || length > 10) continue;
     if (placed.length >= targetLimit) break;
