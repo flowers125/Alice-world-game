@@ -35,7 +35,7 @@ const state = {
   timer: null,
   pointerDown: false,
   direction: null,
-  soundOn: true,
+  soundOn: (() => { try { return localStorage.getItem("alice-sound") !== "off"; } catch (_) { return true; } })(),
   audio: null
 };
 
@@ -245,19 +245,45 @@ function playTone(frequency) {
   } catch (_) {}
 }
 
+function applyLanguage() {
+  const vi = state.language === "vi";
+  document.documentElement.lang = state.language;
+  $("subtitle").textContent = vi ? "Tìm những từ ẩn!" : "Find the hidden words!";
+  $("timer-label").textContent = vi ? "Thời gian" : "Time";
+  $("score-label").textContent = vi ? "Điểm" : "Score";
+  $("start-game").textContent = vi ? "Bắt đầu" : "Start Game";
+  $("help-button").textContent = vi ? "Cách chơi" : "How to play";
+  $("sound-button").textContent = vi
+    ? (state.soundOn ? "Âm thanh: Bật" : "Âm thanh: Tắt")
+    : (state.soundOn ? "Sound: On" : "Sound: Off");
+  $("difficulty").options[0].textContent = vi ? "Bình thường" : "Normal";
+  $("difficulty").options[1].textContent = vi ? "Rất khó" : "Very Hard";
+  $("help-title").textContent = vi ? "Cách chơi" : "How to play";
+  $("help-copy").textContent = vi
+    ? "Tìm các từ ẩn bằng cách kéo qua những chữ cái theo đường thẳng: ngang, dọc hoặc chéo. Từ có thể xuất hiện theo cả hai chiều. Mỗi từ chỉ được tính điểm một lần. Bạn có 60 giây!"
+    : "Find hidden words by dragging in a straight line: horizontally, vertically, or diagonally. Words may appear in either direction. Each word scores only once. You have 60 seconds!";
+  $("close-help").textContent = vi ? "Đã hiểu" : "Got it";
+}
+
 function changeLanguage(value) {
   if (!["vi","en"].includes(value)) return;
   state.language = value;
+  applyLanguage();
   if (state.running) generateRound();
-  else {
-    $("subtitle").textContent = value === "vi" ? "Tìm những từ ẩn!" : "Find the hidden words!";
-    $("start-game").textContent = value === "vi" ? "Bắt đầu" : "Start Game";
-    $("game-message").textContent = "";
-  }
+  else $("game-message").textContent = "";
 }
 
 document.addEventListener("DOMContentLoaded", () => {
   $("start-game").addEventListener("click", generateRound);
+  applyLanguage();
+  $("sound-button").addEventListener("click", () => {
+    state.soundOn = !state.soundOn;
+    try { localStorage.setItem("alice-sound", state.soundOn ? "on" : "off"); } catch (_) {}
+    applyLanguage();
+    if (state.soundOn) playTone(660);
+  });
+  $("help-button").addEventListener("click", () => $("help-dialog").showModal());
+  $("close-help").addEventListener("click", () => $("help-dialog").close());
   $("language").addEventListener("change", e => changeLanguage(e.target.value));
   $("difficulty").addEventListener("change", e => {
     state.difficulty = e.target.value;
