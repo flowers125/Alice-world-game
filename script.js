@@ -276,7 +276,7 @@ function applyLanguage() {
   $("help-title").textContent = vi ? "Cách chơi" : "How to play";
   $("help-copy").textContent = vi
     ? "Tìm các từ ẩn bằng cách kéo qua những chữ cái theo đường thẳng: ngang, dọc hoặc chéo. Từ có thể xuất hiện theo cả hai chiều. Mỗi từ chỉ được tính điểm một lần. Bạn có 60 giây! Chế độ Rất khó có nhiều từ dài hơn và thưởng thêm 3 điểm mỗi từ."
-    : "Find hidden words by dragging in a straight line: horizontally, vertically, or diagonally. Words may appear in either direction. Each word scores only once. You have 60 seconds! Very Hard has more longer words and awards 3 bonus points per word.";
+    : "Find hidden words by dragging in a straight line: horizontally, vertically, or diagonally. Words may appear in either direction. Each word scores only once. You have 60 seconds! Very Hard has more words, with a minimum length of 4 letters, and awards 3 bonus points per word.";
   $("close-help").textContent = vi ? "Đã hiểu" : "Got it";
   $("google-sign-in").textContent = vi ? "Đăng nhập Google" : "Sign in with Google";
   $("sign-out").textContent = vi ? "Đăng xuất" : "Sign out";
