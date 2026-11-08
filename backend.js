@@ -116,46 +116,16 @@
     return localGenerateRound();
   };
 
-  endSelection=function(){
-    if(!state.pointerDown) return;
-    const selected=state.selected.slice();
-    state.pointerDown=false;
-
+  window.handleWordSubmit = async function(cells){
     if(!secureRound){
-      const letters=selected.map(({row,col})=>state.grid[row][col]).join("");
-      const reversed=Array.from(letters).reverse().join("");
-      const found=selected.length>1&&state.words.find(word=>
-        (word===letters||word===reversed)&&!state.found.has(word)
-      );
-      if(found){
-        state.found.add(found);
-        celebrateFoundWord(selected);
-        state.score=scoreFor(state.found.size);
-        $ui("game-message").textContent=state.language==="vi"?"Tìm thấy từ!":"Word found!";
-        playTone(660);
-        updateHUD();
-      }else if(selected.length>1){
-        $ui("game-message").textContent=state.language==="vi"?"Chưa đúng, thử lại nhé!":"Not quite. Try again!";
-        playTone(190);
-      }else{
-        $ui("game-message").textContent=state.language==="vi"?"Hãy kéo qua ít nhất 2 chữ cái.":"Drag across at least 2 letters.";
-      }
-      state.selected=[];
-      state.direction=null;
-      paintSelection();
+      localSubmitWord(cells);
       return;
     }
-
-    const cells=selected.map(({row,col})=>({r:row,c:col}));
-    state.selected=[];
-    state.direction=null;
-    paintSelection();
-    if(cells.length>1){
-      const selectedRoundId=roundId;
-      claimQueue=claimQueue.then(()=>claimSecureWord(cells,selectedRoundId));
-    }else{
-      $ui("game-message").textContent=state.language==="vi"?"Hãy kéo qua ít nhất 2 chữ cái.":"Drag across at least 2 letters.";
-    }
+    if(!roundId || cells.length < 2) return;
+    const payload=cells.map(({row,col})=>({r:row,c:col}));
+    const selectedRoundId=roundId;
+    claimQueue=claimQueue.then(()=>claimSecureWord(payload,selectedRoundId));
+    await claimQueue;
   };
 
   async function claimSecureWord(cells,targetRoundId){
@@ -168,9 +138,11 @@
         playTone(190);
         return;
       }
-      state.found.add(result.word);
+      state.found.add(result.word.normalize("NFC").toLocaleLowerCase(state.language).replace(/\\s+/g,""));
+      cells.forEach(p=>{state.grid[p.r][p.c]="";});
       celebrateFoundWord(cells.map(p=>({row:p.r,col:p.c})));
       state.score=result.score;
+      renderGrid();
       $ui("game-message").textContent=state.language==="vi"?"Tìm thấy từ!":"Word found!";
       playTone(660);
       updateHUD();
