@@ -14,6 +14,7 @@
   let secureRound = false;
   let claimQueue = Promise.resolve();
   let finishPromise = null;
+  let startingRound = false;
 
   async function callGame(action, payload = {}) {
     const {data,error} = await client.functions.invoke("alice-game",{body:{action,...payload}});
@@ -41,6 +42,8 @@
   }
 
   async function startSecureRound() {
+    if (startingRound) return;
+    startingRound = true;
     if (finishPromise) await finishPromise;
     else if (state.running) await finishRound();
     clearInterval(state.timer);
@@ -71,6 +74,7 @@
       $ui("game-message").textContent=error.message;
     } finally {
       $ui("start-game").disabled=false;
+      startingRound = false;
     }
   }
 
