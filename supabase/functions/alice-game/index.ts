@@ -27,10 +27,6 @@ function shuffle<T>(items: T[]) {
   }
   return a;
 }
-function totalScore(count: number, hard: boolean) {
-  const base = count === 1 ? 2 : count === 2 ? 5 : count >= 3 ? 12 : 0;
-  return base + (hard ? count * 3 : 0);
-}
 function placeWord(board: string[][], word: string) {
   const dirs = shuffle([[0,1],[1,0],[1,1],[1,-1],[-1,0],[0,-1],[-1,-1],[-1,1]]);
   const letters = Array.from(normalize(word));
