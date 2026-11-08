@@ -6,8 +6,8 @@ const MAX_WORD_LENGTH = 20;
 const ROUND_SECONDS = 60;
 
 const FALLBACK_WORDS = {
-  vi: ["alice","hoa","nắng","mây","trăng","biển","rừng","sao","mưa","gió","sách","mèo","chim","cây","nhà","đường","nước","mùa hè","bình minh","cầu vồng"],
-  en: ["alice","flower","sun","moon","cloud","ocean","forest","star","rain","wind","book","cat","bird","tree","house","river","water","light","dream","spring"]
+  vi: ["alice","cá","cơm","đèn","thuyền","hoa","lá","sữa","nhà","nắng","mây","trăng","biển","rừng","sao","mưa","gió","sách","mèo","chim","cây","đường","nước","bình minh","cầu vồng"],
+  en: ["alice","no","yes","say","cat","dog","sun","flower","moon","cloud","ocean","forest","star","rain","wind","book","bird","tree","house","river","water","light","dream","spring"]
 };
 const DICTIONARY_URLS = { vi: "dictionaries/vi.txt", en: "dictionaries/en.txt" };
 
@@ -88,7 +88,7 @@ function placeWord(grid, letters) {
 }
 
 function selectCandidates(sourceWords, difficulty) {
-  const minWordLength = difficulty === "very-hard" ? 4 : 2;
+  const minWordLength = 2;
   const targetLimit = difficulty === "very-hard" ? 42 : 36;
   return shuffle([...new Set(sourceWords
     .filter(raw => !/\s/u.test(raw.trim()))
