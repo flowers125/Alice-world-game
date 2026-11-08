@@ -253,7 +253,7 @@
     $ui("leaderboard-button").addEventListener("click",async()=>{
       $ui("leaderboard-dialog").showModal();await showLeaderboard();
     });
-    $ui("leaderboard-language").addEventListener("change",showLeaderboard);
+    $ui("leaderboard-language").addEventListener("change",()=>{$ui("inline-leaderboard-language").value=$ui("leaderboard-language").value;showLeaderboard();});
     $ui("leaderboard-difficulty").addEventListener("change",()=>{$ui("inline-leaderboard-language").value=$ui("leaderboard-language").value;$ui("inline-leaderboard-difficulty").value=$ui("leaderboard-difficulty").value;showLeaderboard();});
     $ui("inline-leaderboard-language").addEventListener("change",()=>{$ui("leaderboard-language").value=$ui("inline-leaderboard-language").value;showLeaderboard();});
     $ui("inline-leaderboard-difficulty").addEventListener("change",()=>{$ui("leaderboard-difficulty").value=$ui("inline-leaderboard-difficulty").value;showLeaderboard();});
