@@ -140,7 +140,6 @@
       }
       state.found.add(result.word.normalize("NFC").toLocaleLowerCase(state.language).replace(/\\s+/g,""));
       cells.forEach(p=>{state.grid[p.r][p.c]="";});
-      celebrateFoundWord(cells.map(p=>({row:p.r,col:p.c})));
       state.score=result.score;
       renderGrid();
       $ui("game-message").textContent=state.language==="vi"?"Tìm thấy từ!":"Word found!";
