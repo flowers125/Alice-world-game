@@ -13,24 +13,23 @@ const sandbox = {
   clearInterval() {},
 };
 vm.runInNewContext(
-  source + "\nglobalThis.__gameTest = { state, scoreFor, normalize, placeWord, selectCandidates };",
+  source + "\nglobalThis.__gameTest = { state, scoreFor, normalize, ROWS, COLS, buildLetterWeights, randomWeightedLetter, injectStarterWords };",
   sandbox,
 );
-const { state, scoreFor, normalize, placeWord, selectCandidates } = sandbox.__gameTest;
+const { state, scoreFor, normalize, ROWS, COLS, buildLetterWeights, randomWeightedLetter, injectStarterWords } = sandbox.__gameTest;
 
-test("normal scoring follows the agreed cumulative score", () => {
-  state.difficulty = "normal";
-  assert.deepEqual([1, 2, 3, 4, 5].map(scoreFor), [2, 5, 12, 12, 12]);
+test("letter-length scoring matches the agreed table", () => {
+  assert.deepEqual(
+    Array.from({ length: 10 }, (_, index) => scoreFor(index + 1)),
+    [0, 1, 2, 3, 7, 8, 9, 11, 15, 15],
+  );
 });
 
-test("very easy awards half the normal cumulative score, rounded down", () => {
-  state.difficulty = "very-easy";
-  assert.deepEqual([1, 2, 3, 4, 5].map(scoreFor), [1, 2.5, 6, 6, 6]);
-});
-
-test("very hard adds three points for every found word", () => {
-  state.difficulty = "very-hard";
-  assert.deepEqual([1, 2, 3, 4, 5].map(scoreFor), [5, 11, 21, 24, 27]);
+test("all three difficulty modes use the agreed word-length score table", () => {
+  for (const mode of ["very-easy", "normal", "very-hard"]) {
+    state.difficulty = mode;
+    assert.deepEqual([2, 3, 4, 5, 6, 7, 8, 9].map(scoreFor), [1, 2, 3, 7, 8, 9, 11, 15]);
+  }
 });
 
 test("Vietnamese normalization uses NFC, lowercase, and removes spaces", () => {
@@ -38,35 +37,29 @@ test("Vietnamese normalization uses NFC, lowercase, and removes spaces", () => {
   assert.equal(Array.from(normalize(" ĐIỆN thoại ")).join(""), "điệnthoại");
 });
 
-test("word placement fits a ten-letter word inside the 15x20 board", () => {
-  const board = Array.from({ length: 15 }, () => Array(20).fill(""));
-  assert.equal(placeWord(board, Array.from("abcdefghij")), true);
-  const directions = [[0,1],[0,-1],[1,0],[-1,0],[1,1],[1,-1],[-1,1],[-1,-1]];
-  const found = directions.some(([dr, dc]) =>
-    board.some((row, r) => row.some((_, c) => {
-      const letters = Array.from({ length: 10 }, (_, i) => {
-        const rr = r + dr * i, cc = c + dc * i;
-        return rr < 0 || rr >= 15 || cc < 0 || cc >= 20 ? "" : board[rr][cc];
-      });
-      return letters.join("") === "abcdefghij";
-    }))
-  );
-  assert.equal(found, true);
+test("the board dimensions remain 15 by 20", () => {
+  assert.equal(ROWS, 15);
+  assert.equal(COLS, 20);
+  const board = Array.from({ length: ROWS }, () => Array(COLS).fill("x"));
+  assert.equal(board.flat().length, 300);
 });
 
-test("words longer than the supported maximum are rejected", () => {
-  const board = Array.from({ length: 15 }, () => Array(20).fill(""));
-  assert.equal(placeWord(board, Array.from("abcdefghijklmnopqrstu")), false);
+test("letter weights are based on dictionary letter frequency", () => {
+  const weights = buildLetterWeights(["cá", "cơm", "hoa", "mùa hè"]);
+  const map = new Map(weights.map(item => [item.letter, item.weight]));
+  assert.equal(map.get("c"), 2);
+  assert.equal(map.get("á"), 1);
+  assert.equal(map.has(" "), false);
+  assert.equal(randomWeightedLetter([{ letter: "z", weight: 1 }], ["a"]), "z");
 });
 
-test("all difficulty modes include valid short words", () => {
-  state.language = "en";
-  const words = ["no", "yes", "say", "cat", "word", "dream"];
-  for (const mode of ["very-easy", "normal", "very-hard"]) {
-    const candidates = selectCandidates(words, mode).map(chars => chars.join(""));
-    assert.equal(candidates.includes("no"), true, mode);
-    assert.equal(candidates.includes("yes"), true, mode);
+test("starter words are seeded into the 300-cell Vietnamese board", () => {
+  state.grid = Array.from({ length: ROWS }, () => Array(COLS).fill(""));
+  injectStarterWords("vi");
+  const letters = state.grid.flat().join("");
+  for (const word of ["cá", "cơm", "đèn", "thuyền", "hoa", "lá", "sữa", "nhà"]) {
+    for (const letter of Array.from(word)) {
+      assert.equal(letters.includes(letter), true, "missing starter letter: " + letter);
+    }
   }
-  assert.equal(selectCandidates(["hoa", "mùa hè", "lá"], "normal")
-    .some(chars => chars.join("") === "mùa hè"), false);
 });
