@@ -272,6 +272,17 @@ function renderGrid() {
     cell.dataset.col = c;
     cell.setAttribute("aria-label", `${letter ? letter.toLocaleUpperCase(state.language) + ", " : ""}row ${r+1}, column ${c+1}`);
     cell.setAttribute("aria-pressed", "false");
+    // Bind the tap directly to each cell. This avoids relying on delegated
+    // click events bubbling through the grid on mobile browsers.
+    cell.addEventListener("click", () => {
+      if (!state.running || cell.disabled) return;
+      const position = {row:r,col:c};
+      const existing = state.selected.findIndex(p => p.row === r && p.col === c);
+      if (existing >= 0) state.selected.splice(existing, 1);
+      else state.selected.push(position);
+      paintSelection();
+      renderWordBuilder();
+    });
     grid.appendChild(cell);
   }));
   renderWordBuilder();
@@ -493,16 +504,6 @@ document.addEventListener("DOMContentLoaded", () => {
     if (state.running) generateRound();
   });
 
-  $("game-grid").addEventListener("click", e => {
-    const cell = e.target.closest(".grid-cell");
-    if (!cell || cell.disabled || !state.running) return;
-    const position = {row:+cell.dataset.row,col:+cell.dataset.col};
-    const existing = state.selected.findIndex(p => p.row === position.row && p.col === position.col);
-    if (existing >= 0) state.selected.splice(existing, 1);
-    else state.selected.push(position);
-    paintSelection();
-    renderWordBuilder();
-  });
   $("confirm-word").addEventListener("click", confirmSelectedWord);
   $("clear-word").addEventListener("click", clearWordSelection);
   document.addEventListener("keydown", e => {
