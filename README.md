@@ -18,8 +18,8 @@ This is a static site; no build step is required.
 1. Connect this GitHub repository to Cloudflare Pages.
 2. Select the `main` production branch.
 3. Set the framework preset to **None**.
-4. Leave the build command empty.
-5. Set the build output directory to `/`.
+4. Set the build command to `exit 0` (or leave it blank).
+5. Set the build output directory to `.` (the repository root).
 6. After the first deployment, add the site's production URL to Supabase Authentication → URL Configuration → Redirect URLs.
 
 The site entry point is the root `index.html`.
