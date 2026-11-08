@@ -447,6 +447,10 @@ function applyLanguage() {
 function changeLanguage(value) {
   if (!["vi","en"].includes(value)) return;
   state.language = value;
+  state.validWords = new Set(state.dictionary[state.language]
+    .filter(word => !/\s/u.test(word.trim()))
+    .map(word => normalize(word).join(""))
+    .filter(word => Array.from(word).length >= 2));
   applyLanguage();
   if (state.running) generateRound();
   else $("game-message").textContent = "";
