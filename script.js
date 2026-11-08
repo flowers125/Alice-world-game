@@ -92,7 +92,6 @@ const state = {
   seconds: ROUND_SECONDS,
   score: 0,
   timer: null,
-  pointerDown: false,
   direction: null,
   soundOn: (() => { try { return localStorage.getItem("alice-sound") !== "off"; } catch (_) { return true; } })(),
   audio: null
@@ -271,7 +270,8 @@ function renderGrid() {
     if (!letter) cell.classList.add("empty");
     cell.dataset.row = r;
     cell.dataset.col = c;
-    cell.setAttribute("aria-label", `Row ${r+1}, column ${c+1}`);
+    cell.setAttribute("aria-label", `${letter ? letter.toLocaleUpperCase(state.language) + ", " : ""}row ${r+1}, column ${c+1}`);
+    cell.setAttribute("aria-pressed", "false");
     grid.appendChild(cell);
   }));
   renderWordBuilder();
@@ -328,79 +328,12 @@ async function confirmSelectedWord() {
   await window.handleWordSubmit(cells);
 }
 
-function cellAt(x,y) {
-  const el = document.elementFromPoint(x,y);
-  return el && el.closest ? el.closest(".grid-cell") : null;
-}
-
-function beginSelection(cell, pointerId) {
-  if (!state.running || !cell) return;
-  state.pointerDown = true;
-  state.pointerId = pointerId;
-  state.direction = null;
-  state.selected = [{row:+cell.dataset.row, col:+cell.dataset.col}];
-  paintSelection();
-}
-
-function moveSelection(cell) {
-  if (!state.pointerDown || !cell) return;
-  const start = state.selected[0];
-  const row = +cell.dataset.row, col = +cell.dataset.col;
-  const dr0 = row - start.row, dc0 = col - start.col;
-  if (dr0 === 0 && dc0 === 0) return;
-
-  if (!state.direction) {
-    if (!(dr0 === 0 || dc0 === 0 || Math.abs(dr0) === Math.abs(dc0))) return;
-    state.direction = [Math.sign(dr0), Math.sign(dc0)];
-  }
-  const [dr,dc] = state.direction;
-  let steps;
-  if (dr === 0) {
-    if (row !== start.row || dc0 * dc < 0) return;
-    steps = Math.abs(dc0);
-  } else if (dc === 0) {
-    if (col !== start.col || dr0 * dr < 0) return;
-    steps = Math.abs(dr0);
-  } else {
-    if (dr0 * dr < 0 || dc0 * dc < 0 || Math.abs(dr0) !== Math.abs(dc0)) return;
-    steps = Math.abs(dr0);
-  }
-  if (steps >= MAX_WORD_LENGTH) return;
-  state.selected = Array.from({length:steps+1}, (_,i) => ({row:start.row+dr*i,col:start.col+dc*i}));
-  paintSelection();
-}
-
 function paintSelection() {
-  document.querySelectorAll(".grid-cell.selected").forEach(el => el.classList.remove("selected"));
+  document.querySelectorAll(".grid-cell.selected").forEach(el => { el.classList.remove("selected"); el.setAttribute("aria-pressed", "false"); });
   state.selected.forEach(({row,col}) => {
     const el = document.querySelector(`.grid-cell[data-row="${row}"][data-col="${col}"]`);
-    if (el) el.classList.add("selected");
+    if (el) { el.classList.add("selected"); el.setAttribute("aria-pressed", "true"); }
   });
-}
-
-function endSelection() {
-  if (!state.pointerDown) return;
-  state.pointerDown = false;
-  const letters = state.selected.map(({row,col}) => state.grid[row][col]).join("");
-  const reversed = Array.from(letters).reverse().join("");
-  const found = state.selected.length > 1 && state.words.find(word =>
-    (word === letters || word === reversed) && !state.found.has(word)
-  );
-
-  if (found) {
-    state.found.add(found);
-    celebrateFoundWord(state.selected);
-    state.score = scoreFor(state.found.size);
-    $("game-message").textContent = state.language === "vi" ? "Tìm thấy từ!" : "Word found!";
-    playTone(660);
-    updateHUD();
-  } else if (state.selected.length > 1) {
-    $("game-message").textContent = state.language === "vi" ? "Chưa đúng, thử lại nhé!" : "Not quite. Try again!";
-    playTone(190);
-  }
-  state.selected = [];
-  state.direction = null;
-  paintSelection();
 }
 
 function finishRound() {
