@@ -2,11 +2,43 @@
 <html lang="vi">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>Alice Word Game</title>
+  <link rel="stylesheet" href="style.css">
 </head>
 <body>
-  <h1>Alice Word Game</h1>
-  <p>Welcome to Alice's world!</p>
+  <main class="container">
+    <header>
+      <h1>Alice Word Game</h1>
+      <p>Find the hidden words!</p>
+    </header>
+
+    <section class="card">
+      <div class="game-menu">
+        <select id="language">
+          <option value="vi">Tiếng Việt</option>
+          <option value="en">English</option>
+        </select>
+
+        <select id="difficulty">
+          <option value="normal">Normal</option>
+          <option value="very-hard">Very Hard</option>
+        </select>
+      </div>
+
+      <div class="game-info">
+        <p>Time: <strong id="timer">60</strong></p>
+        <p>Score: <strong id="score">0</strong></p>
+      </div>
+
+      <div id="game-grid"></div>
+
+      <button id="start-game">Start Game</button>
+
+      <p id="game-message"></p>
+    </section>
+  </main>
+
+  <script src="script.js"></script>
 </body>
 </html>
