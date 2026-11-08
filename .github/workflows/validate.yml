@@ -24,6 +24,9 @@ jobs:
           node --check backend.js
           node --check supabase-config.js
 
+      - name: Run game logic tests
+        run: node --test tests/*.test.cjs
+
       - name: Set up Deno
         uses: denoland/setup-deno@v2
 
