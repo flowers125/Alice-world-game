@@ -153,10 +153,9 @@
     }
     const language=$ui("leaderboard-language").value;
     const difficulty=$ui("leaderboard-difficulty").value;
-    const {data,error}=await client.from("leaderboard")
-      .select("display_name,score,achieved_at")
-      .eq("language",language).eq("difficulty",difficulty)
-      .order("score",{ascending:false}).order("achieved_at",{ascending:true}).limit(20);
+    const {data,error}=await client.rpc("get_alice_leaderboard",{
+      p_language:language,p_difficulty:difficulty,p_limit:20
+    });
     if(error||!data?.length){
       const li=document.createElement("li");li.textContent=state.language==="vi"?"Chưa có dữ liệu.":"No scores yet.";list.appendChild(li);return;
     }
