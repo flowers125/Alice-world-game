@@ -23,7 +23,7 @@ test("normal scoring follows the agreed cumulative score", () => {
   assert.deepEqual([1, 2, 3, 4, 5].map(scoreFor), [2, 5, 12, 12, 12]);
 });
 
-test("very hard adds three points for every found word", () => {
+test("very easy awards half the normal cumulative score, rounded down", () => {\n  state.difficulty = "very-easy";\n  assert.deepEqual([1, 2, 3, 4, 5].map(scoreFor), [1, 2, 6, 6, 6]);\n});\n\ntest("very hard adds three points for every found word", () => {
   state.difficulty = "very-hard";
   assert.deepEqual([1, 2, 3, 4, 5].map(scoreFor), [5, 11, 21, 24, 27]);
 });
@@ -59,7 +59,7 @@ test("Very Hard filters short words while Normal allows them", () => {
   const words = ["an", "cat", "word", "dream", "bright"];
   const normal = selectCandidates(words, "normal").map(chars => chars.join(""));
   const hard = selectCandidates(words, "very-hard").map(chars => chars.join(""));
-  assert.equal(normal.includes("an"), true);
+  assert.equal(normal.includes("an"), true);\n  assert.equal(selectCandidates(["hoa", "mùa hè", "lá"], "normal").some(chars => chars.join("") === "mùa hè"), false);
   assert.equal(hard.some(word => word.length < 4), false);
   assert.equal(hard.length, 3);
 });
