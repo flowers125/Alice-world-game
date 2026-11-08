@@ -88,16 +88,34 @@ function placeWord(grid, letters) {
 }
 
 function selectCandidates(sourceWords, difficulty) {
-  const minWordLength = 2;
   const targetLimit = difficulty === "very-hard" ? 42 : 36;
-  return shuffle([...new Set(sourceWords
+  const words = shuffle([...new Set(sourceWords
     .filter(raw => !/\s/u.test(raw.trim()))
     .map(normalize)
-    .filter(w => w.length >= minWordLength && w.length <= MAX_WORD_LENGTH)
-    .map(w => w.join("")))])
-    .slice(0, targetLimit)
-    .map(word => Array.from(word))
-    .sort((a,b) => b.length - a.length);
+    .filter(w => w.length >= 2 && w.length <= MAX_WORD_LENGTH)
+    .map(w => w.join("")))]);
+  // Keep short, everyday words present in every round instead of letting
+  // long words crowd them out of the 300-cell board.
+  const buckets = [
+    { min: 2, max: 3, count: difficulty === "very-hard" ? 14 : 12 },
+    { min: 4, max: 5, count: difficulty === "very-hard" ? 10 : 8 },
+    { min: 6, max: 7, count: difficulty === "very-hard" ? 9 : 8 },
+    { min: 8, max: MAX_WORD_LENGTH, count: difficulty === "very-hard" ? 9 : 8 }
+  ];
+  const chosen = [];
+  const used = new Set();
+  for (const bucket of buckets) {
+    const group = shuffle(words.filter(word =>
+      word.length >= bucket.min && word.length <= bucket.max && !used.has(word)
+    )).slice(0, bucket.count);
+    group.forEach(word => { chosen.push(word); used.add(word); });
+  }
+  if (chosen.length < targetLimit) {
+    shuffle(words.filter(word => !used.has(word)))
+      .slice(0, targetLimit - chosen.length)
+      .forEach(word => chosen.push(word));
+  }
+  return chosen.map(word => Array.from(word)).sort((a,b) => b.length - a.length);
 }
 
 function generateRound() {
