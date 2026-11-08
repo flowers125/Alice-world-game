@@ -164,3 +164,18 @@ header p { font-size: 12px; }
   #game-grid { gap:1px; margin:6px auto; }
   .grid-cell { border-radius:2px; font-size:clamp(7px, 3.7vw, 16px); }
 }
+
+
+.topic-label {
+  opacity: 1;
+  transform: translateY(0);
+  transition: opacity 1s ease, transform 1s ease;
+}
+.topic-label.topic-fade-out {
+  opacity: 0;
+  transform: translateY(-6px);
+  pointer-events: none;
+}
+@media (prefers-reduced-motion: reduce) {
+  .topic-label { transition-duration: .01ms; }
+}
