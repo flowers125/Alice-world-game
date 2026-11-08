@@ -364,13 +364,17 @@ document.addEventListener("DOMContentLoaded", () => {
     if (!state.pointerDown || e.pointerId !== state.pointerId) return;
     moveSelection(cellAt(e.clientX,e.clientY));
   });
-  document.addEventListener("pointerup", e => {
+  window.addEventListener("pointerup", e => {
     if (state.pointerDown && e.pointerId === state.pointerId) endSelection();
-  });
-  document.addEventListener("pointercancel", () => {
+  }, true);
+  window.addEventListener("pointercancel", e => {
+    if (!state.pointerDown || e.pointerId !== state.pointerId) return;
     state.pointerDown = false;
     state.selected = [];
     state.direction = null;
+    $("game-message").textContent = state.language === "vi"
+      ? "Thao tác kéo đã bị gián đoạn, hãy thử lại."
+      : "Selection was interrupted. Please try again.";
     paintSelection();
-  });
+  }, true);
 });
