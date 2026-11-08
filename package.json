@@ -3,7 +3,8 @@
   "private": true,
   "type": "module",
   "scripts": {
-    "import:dictionaries": "node scripts/import-dictionaries.mjs"
+    "import:dictionaries": "node scripts/import-dictionaries.mjs",
+    "build": "node scripts/build.mjs"
   },
   "dependencies": {
     "@supabase/supabase-js": "^2.57.0"
