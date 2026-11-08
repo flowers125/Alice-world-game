@@ -16,6 +16,7 @@
   let finishPromise = null;
   let startingRound = false;
   let leaderboardRequest = 0;
+  let accountRequest = 0;
 
   async function callGame(action, payload = {}) {
     const {data,error} = await client.functions.invoke("alice-game",{body:{action,...payload}});
@@ -25,6 +26,7 @@
   }
 
   async function updateAccount(nextSession) {
+    const requestId=++accountRequest;
     session=nextSession||null;
     state.session=session;
     state.user=session?.user||null;
@@ -40,7 +42,9 @@
       return;
     }
     $ui("display-name").value="";
-    const {data,error}=await client.from("profiles").select("display_name").eq("id",session.user.id).maybeSingle();
+    const currentUserId=session.user.id;
+    const {data,error}=await client.from("profiles").select("display_name").eq("id",currentUserId).maybeSingle();
+    if(requestId!==accountRequest || session?.user?.id!==currentUserId)return;
     if(error) console.error(error);
     if(data?.display_name) $ui("display-name").value=data.display_name;
     else if(session.user.user_metadata?.full_name) $ui("display-name").value=String(session.user.user_metadata.full_name).slice(0,24);
@@ -239,9 +243,19 @@
     }
     client=window.supabase.createClient(window.ALICE_SUPABASE_URL,window.ALICE_SUPABASE_ANON_KEY);
     state.supabase=client;
-    const {data}=await client.auth.getSession();
-    await updateAccount(data.session);
-    client.auth.onAuthStateChange((_event,nextSession)=>{setTimeout(()=>updateAccount(nextSession),0);});
+    try {
+      const {data,error}=await client.auth.getSession();
+      if(error) throw error;
+      await updateAccount(data.session);
+      client.auth.onAuthStateChange((_event,nextSession)=>{setTimeout(()=>updateAccount(nextSession),0);});
+    } catch(error) {
+      console.error("Supabase session initialization failed",error);
+      state.session=null;
+      state.user=null;
+      $ui("account-status").textContent=state.language==="vi"
+        ?"Không thể kết nối tài khoản · Có thể chơi khách."
+        :"Account connection failed · Guest play is available.";
+    }
     state.backendReady=true;
     $ui("start-game").disabled=!state.dictionaryReady;
   });
