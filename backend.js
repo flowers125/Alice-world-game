@@ -33,22 +33,36 @@
     const signedIn=!!session?.user;
     $ui("google-sign-in").hidden=signedIn;
     $ui("sign-out").hidden=!signedIn;
-    $ui("profile-form").hidden=!signedIn;
+    $ui("profile-form").hidden=true;
     if(!signedIn){
+      state.displayName="";
       $ui("display-name").value="";
+      $ui("display-name").disabled=false;
       $ui("account-status").textContent=state.language==="vi"
         ?"Đang chơi với tư cách khách · Điểm không được lưu online."
         :"Playing as guest · Scores are not saved online.";
       return;
     }
     $ui("display-name").value="";
+    $ui("display-name").disabled=false;
     const currentUserId=session.user.id;
-    const {data,error}=await client.from("profiles").select("display_name").eq("id",currentUserId).maybeSingle();
+    const {data,error}=await client.from("profiles")
+      .select("display_name,display_name_set_at").eq("id",currentUserId).maybeSingle();
     if(requestId!==accountRequest || session?.user?.id!==currentUserId)return;
     if(error) console.error(error);
-    if(data?.display_name) $ui("display-name").value=data.display_name;
-    else if(session.user.user_metadata?.full_name) $ui("display-name").value=String(session.user.user_metadata.full_name).slice(0,24);
-    $ui("account-status").textContent=state.language==="vi"?"Đã đăng nhập Google.":"Signed in with Google.";
+    state.displayName=data?.display_name||"";
+    const nameIsLocked=!!data?.display_name_set_at;
+    $ui("profile-form").hidden=nameIsLocked;
+    if(!nameIsLocked){
+      $ui("display-name").value=data?.display_name ||
+        String(session.user.user_metadata?.full_name||"").slice(0,20);
+    }else{
+      $ui("display-name").value="";
+      $ui("display-name").disabled=true;
+    }
+    $ui("account-status").textContent=state.language==="vi"
+      ? (nameIsLocked ? "Đã đăng nhập · Tên: "+state.displayName : "Đã đăng nhập Google · Hãy đặt tên hiển thị một lần.")
+      : (nameIsLocked ? "Signed in · Name: "+state.displayName : "Signed in with Google · Choose your display name once.");
   }
 
   async function startSecureRound() {
@@ -199,10 +213,21 @@
     }
     const {data,error}=await client.from("profiles")
       .update({display_name:displayName}).eq("id",session.user.id)
-      .select("display_name").single();
-    $ui("account-status").textContent=error
-      ? (error.code==="23505"?(state.language==="vi"?"Tên này đã được dùng.":"Name already taken."):error.message)
-      : (state.language==="vi"?"Đã lưu tên: ":"Saved name: ")+data.display_name;
+      .select("display_name,display_name_set_at").single();
+    if(error){
+      $ui("account-status").textContent=error.code==="23505"
+        ? (state.language==="vi"?"Tên này đã được dùng.":"Name already taken.")
+        : error.code==="23514"
+          ? (state.language==="vi"?"Tên tài khoản đã được đặt và không thể đổi.":"Your account name is already set and cannot be changed.")
+          : error.message;
+      if(error.code==="23514") await updateAccount(session);
+      return;
+    }
+    state.displayName=data.display_name;
+    $ui("profile-form").hidden=true;
+    $ui("display-name").value="";
+    $ui("display-name").disabled=true;
+    $ui("account-status").textContent=(state.language==="vi"?"Đã đặt tên: ":"Name set: ")+data.display_name;
   }
 
   async function showLeaderboard(){
