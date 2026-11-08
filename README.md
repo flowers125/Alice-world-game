@@ -70,3 +70,7 @@ The text dictionaries are in `dictionaries/vi.txt` and `dictionaries/en.txt`; th
 - `backend.js`: Supabase authentication and online-game integration
 - `supabase-config.js`: public browser configuration
 - `supabase/functions/alice-game/index.ts`: Edge Function source
+
+## Testing
+
+See [TESTING.md](TESTING.md) for the guest, scoring, signed-in, and security acceptance checklist. GitHub Actions validates frontend JavaScript syntax, required assets, and the Supabase Edge Function type check on pushes to `main` and pull requests.
