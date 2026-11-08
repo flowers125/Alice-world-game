@@ -166,6 +166,13 @@
 
   async function showLeaderboard() {
     const list = $ui("leaderboard-list");
+    if (!client) {
+      list.replaceChildren();
+      const li = document.createElement("li");
+      li.textContent = "Cần cấu hình Supabase để xem bảng xếp hạng.";
+      list.appendChild(li);
+      return;
+    }
     list.replaceChildren();
     const language = $ui("leaderboard-language").value;
     const difficulty = $ui("leaderboard-difficulty").value;
@@ -219,6 +226,7 @@
     $ui("close-leaderboard").addEventListener("click", () => $ui("leaderboard-dialog").close());
 
     if (!hasConfig()) {
+      $ui("google-sign-in").disabled = true;
       $ui("account-status").textContent = "Chế độ khách · Cần thêm Supabase publishable key để bật đăng nhập.";
       return;
     }
