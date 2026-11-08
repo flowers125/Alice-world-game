@@ -1,3 +1,4 @@
+
 "use strict";
 
 const CONFIG = {
@@ -7,18 +8,24 @@ const CONFIG = {
   difficulties: ["normal", "very-hard"]
 };
 
+// Từ mẫu để kiểm tra engine.
+// Sau này sẽ thay bằng bộ từ điển đầy đủ.
 const WORDS = {
   vi: [
-    "alice", "hoa", "nang", "may", "trang",
-    "bien", "rung", "sao", "mua", "gio",
-    "sach", "meo", "chim", "cay", "nha",
-    "duong", "nuoc", "lua", "muahe", "banmai"
+    "alice", "hoa", "nắng", "mây", "trăng",
+    "biển", "rừng", "sao", "mưa", "gió",
+    "sách", "mèo", "chim", "cây", "nhà",
+    "đường", "nước", "lửa", "mùa hè", "bình minh",
+    "cầu vồng", "ánh sáng", "hoa sen", "bầu trời",
+    "dòng sông", "cánh đồng", "ngôi sao"
   ],
   en: [
     "alice", "flower", "sun", "moon", "cloud",
     "ocean", "forest", "star", "rain", "wind",
     "book", "cat", "bird", "tree", "house",
-    "river", "water", "light", "dream", "spring"
+    "river", "water", "light", "dream", "spring",
+    "rainbow", "garden", "butterfly", "sunshine",
+    "mountain", "flowerpot"
   ]
 };
 
@@ -29,6 +36,20 @@ const DIRECTIONS = [
   [-1, 1], [-1, -1]
 ];
 
+const BACKGROUNDS = [
+  "#e8eee4",
+  "#f4f0e8",
+  "#e5eff5",
+  "#eee9f7",
+  "#f8ece5",
+  "#e6edf0"
+];
+
+const ALPHABETS = {
+  vi: Array.from("aăâbcdđeêghiklmnoôơpqrstuưvxy"),
+  en: Array.from("abcdefghijklmnopqrstuvwxyz")
+};
+
 const state = {
   language: "vi",
   difficulty: "normal",
@@ -36,6 +57,9 @@ const state = {
   words: [],
   foundWords: new Set(),
   selectedCells: [],
+  direction: null,
+  dragging: false,
+  pointerId: null,
   secondsLeft: CONFIG.roundSeconds,
   score: 0,
   timer: null,
@@ -43,22 +67,33 @@ const state = {
 };
 
 function normalizeWord(word) {
-  return word
-    .normalize("NFC")
-    .toLocaleLowerCase(state.language === "vi" ? "vi" : "en")
-    .replace(/\s+/g, "");
+  return Array.from(
+    word
+      .normalize("NFC")
+      .toLocaleLowerCase(state.language)
+      .replace(/\s+/g, "")
+  );
+}
+
+function shuffle(array) {
+  const result = [...array];
+
+  for (let i = result.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [result[i], result[j]] = [result[j], result[i]];
+  }
+
+  return result;
 }
 
 function calculateScore(count) {
   if (count === 0) return 0;
 
-  let base = count === 1 ? 2 : count === 2 ? 5 : 12;
+  const base = count === 1 ? 2 : count === 2 ? 5 : 12;
 
-  if (state.difficulty === "very-hard") {
-    base += count * 3;
-  }
-
-  return base;
+  return state.difficulty === "very-hard"
+    ? base + count * 3
+    : base;
 }
 
 function createEmptyGrid() {
@@ -76,29 +111,32 @@ function canPlace(grid, word, row, col, dr, dc) {
     if (
       r < 0 || r >= CONFIG.gridSize ||
       c < 0 || c >= CONFIG.gridSize
-    ) return false;
+    ) {
+      return false;
+    }
 
     const existing = grid[r][c];
 
-    if (existing && existing !== word[i]) return false;
+    if (existing && existing !== word[i]) {
+      return false;
+    }
   }
 
   return true;
 }
 
 function placeWord(grid, word) {
-  const shuffledDirections = [...DIRECTIONS]
-    .sort(() => Math.random() - 0.5);
+  const directions = shuffle(DIRECTIONS);
 
-  for (let attempt = 0; attempt < 150; attempt++) {
-    const [dr, dc] = shuffledDirections[
-      attempt % shuffledDirections.length
-    ];
+  for (let attempt = 0; attempt < 300; attempt++) {
+    const [dr, dc] = directions[attempt % directions.length];
 
     const row = Math.floor(Math.random() * CONFIG.gridSize);
     const col = Math.floor(Math.random() * CONFIG.gridSize);
 
-    if (!canPlace(grid, word, row, col, dr, dc)) continue;
+    if (!canPlace(grid, word, row, col, dr, dc)) {
+      continue;
+    }
 
     for (let i = 0; i < word.length; i++) {
       grid[row + dr * i][col + dc * i] = word[i];
@@ -111,9 +149,7 @@ function placeWord(grid, word) {
 }
 
 function randomLetter() {
-  const alphabet = state.language === "vi"
-    ? "aăâbcdđeêghiklmnoôơpqrstuưvxy"
-    : "abcdefghijklmnopqrstuvwxyz";
+  const alphabet = ALPHABETS[state.language];
 
   return alphabet[Math.floor(Math.random() * alphabet.length)];
 }
@@ -124,22 +160,28 @@ function generateRound() {
   state.grid = createEmptyGrid();
   state.foundWords.clear();
   state.selectedCells = [];
+  state.direction = null;
+  state.dragging = false;
+  state.pointerId = null;
   state.score = 0;
   state.secondsLeft = CONFIG.roundSeconds;
 
-  const source = WORDS[state.language];
+  const pool = WORDS[state.language]
+    .map(normalizeWord)
+    .filter(word =>
+      word.length >= 2 &&
+      word.length <= CONFIG.gridSize
+    );
 
-  const pool = source.filter(word =>
-    word.length <= CONFIG.gridSize
+  const shuffled = shuffle(pool).sort(
+    (a, b) => b.length - a.length
   );
-
-  const shuffled = [...pool].sort(() => Math.random() - 0.5);
 
   state.words = [];
 
   for (const word of shuffled) {
     if (placeWord(state.grid, word)) {
-      state.words.push(word);
+      state.words.push(word.join(""));
     }
   }
 
@@ -151,10 +193,17 @@ function generateRound() {
     }
   }
 
+  document.body.style.backgroundColor =
+    BACKGROUNDS[Math.floor(Math.random() * BACKGROUNDS.length)];
+
   state.running = true;
 
   renderGame();
   updateScore();
+  updateTimer();
+
+  const message = document.getElementById("game-message");
+  if (message) message.textContent = "";
 
   state.timer = setInterval(() => {
     state.secondsLeft--;
@@ -178,38 +227,116 @@ function renderGame() {
 
       cell.type = "button";
       cell.className = "grid-cell";
-      cell.textContent = letter.toLocaleUpperCase();
+      cell.textContent = letter.toLocaleUpperCase(state.language);
 
       cell.dataset.row = r;
       cell.dataset.col = c;
-
-      cell.addEventListener("click", () => {
-        selectCell(r, c);
-      });
+      cell.setAttribute("aria-label", `Row ${r + 1}, column ${c + 1}`);
 
       gridElement.appendChild(cell);
     });
   });
 }
 
-function selectCell(row, col) {
-  if (!state.running) return;
+function getCellFromPoint(x, y) {
+  const element = document.elementFromPoint(x, y);
+  return element?.closest(".grid-cell") || null;
+}
 
-  const cell = { row, col };
-  const last = state.selectedCells.at(-1);
+function startSelection(cell, pointerId) {
+  if (!state.running || !cell) return;
 
-  if (last && last.row === row && last.col === col) {
-    return;
-  }
+  const row = Number(cell.dataset.row);
+  const col = Number(cell.dataset.col);
 
-  state.selectedCells.push(cell);
-
-  if (state.selectedCells.length > 10) {
-    state.selectedCells = [cell];
-  }
+  state.dragging = true;
+  state.pointerId = pointerId;
+  state.direction = null;
+  state.selectedCells = [{ row, col }];
 
   highlightSelection();
+}
+
+function updateSelection(cell) {
+  if (!state.dragging || !cell) return;
+
+  const start = state.selectedCells[0];
+
+  const row = Number(cell.dataset.row);
+  const col = Number(cell.dataset.col);
+
+  const deltaRow = row - start.row;
+  const deltaCol = col - start.col;
+
+  if (deltaRow === 0 && deltaCol === 0) return;
+
+  let dr;
+  let dc;
+  let steps;
+
+  if (!state.direction) {
+    const isStraight =
+      deltaRow === 0 ||
+      deltaCol === 0 ||
+      Math.abs(deltaRow) === Math.abs(deltaCol);
+
+    if (!isStraight) return;
+
+    dr = Math.sign(deltaRow);
+    dc = Math.sign(deltaCol);
+
+    steps = Math.max(
+      Math.abs(deltaRow),
+      Math.abs(deltaCol)
+    );
+
+    state.direction = [dr, dc];
+  } else {
+    [dr, dc] = state.direction;
+
+    if (dr !== 0) {
+      if (deltaRow % dr !== 0) return;
+      steps = deltaRow / dr;
+    } else {
+      steps = deltaCol / dc;
+    }
+
+    if (
+      steps < 1 ||
+      (dr !== 0 && deltaCol !== steps * dc) ||
+      (dc !== 0 && deltaRow !== steps * dr)
+    ) {
+      return;
+    }
+  }
+
+  if (steps < 1 || steps >= CONFIG.gridSize) return;
+
+  const cells = [];
+
+  for (let i = 0; i <= steps; i++) {
+    cells.push({
+      row: start.row + dr * i,
+      col: start.col + dc * i
+    });
+  }
+
+  state.selectedCells = cells;
+  highlightSelection();
+}
+
+function finishSelection() {
+  if (!state.dragging) return;
+
+  state.dragging = false;
+  state.pointerId = null;
+
   checkSelection();
+
+  state.selectedCells = [];
+  state.direction = null;
+
+  highlightSelection();
 }
 
 function highlightSelection() {
@@ -233,14 +360,17 @@ function checkSelection() {
     .map(({ row, col }) => state.grid[row][col])
     .join("");
 
-  const reversed = [...word].reverse().join("");
+  const reversed = Array.from(word).reverse().join("");
 
-  const found = state.words.find(w =>
-    (w === word || w === reversed) &&
-    !state.foundWords.has(w)
+  const found = state.words.find(candidate =>
+    (candidate === word || candidate === reversed) &&
+    !state.foundWords.has(candidate)
   );
 
-  if (!found) return;
+  if (!found) {
+    playSound("invalid");
+    return;
+  }
 
   state.foundWords.add(found);
   state.score = calculateScore(state.foundWords.size);
@@ -248,8 +378,12 @@ function checkSelection() {
   updateScore();
   playSound("success");
 
-  state.selectedCells = [];
-  highlightSelection();
+  const message = document.getElementById("game-message");
+
+  if (message) {
+    message.textContent =
+      state.language === "vi" ? "Tìm thấy từ!" : "Word found!";
+  }
 }
 
 function updateScore() {
@@ -270,13 +404,19 @@ function updateTimer() {
 
 function endRound() {
   clearInterval(state.timer);
+
   state.running = false;
+  state.dragging = false;
+  state.selectedCells = [];
+
+  highlightSelection();
 
   const message = document.getElementById("game-message");
 
   if (message) {
-    message.textContent =
-      `Hết giờ! Điểm của bạn: ${state.score}`;
+    message.textContent = state.language === "vi"
+      ? `Hết giờ! Bạn tìm được ${state.foundWords.size} từ. Điểm: ${state.score}`
+      : `Time's up! You found ${state.foundWords.size} words. Score: ${state.score}`;
   }
 
   playSound("end");
@@ -300,9 +440,10 @@ function playSound(type) {
     gain.connect(audioContext.destination);
 
     oscillator.frequency.value =
-      type === "success" ? 660 : 220;
+      type === "success" ? 660 :
+      type === "invalid" ? 180 : 220;
 
-    gain.gain.value = 0.04;
+    gain.gain.value = 0.035;
 
     oscillator.start();
     oscillator.stop(audioContext.currentTime + 0.12);
@@ -315,14 +456,20 @@ function setLanguage(language) {
   if (!CONFIG.languages.includes(language)) return;
 
   state.language = language;
-  generateRound();
+
+  if (state.running) {
+    generateRound();
+  }
 }
 
 function setDifficulty(difficulty) {
   if (!CONFIG.difficulties.includes(difficulty)) return;
 
   state.difficulty = difficulty;
-  generateRound();
+
+  if (state.running) {
+    generateRound();
+  }
 }
 
 function startGame() {
@@ -330,19 +477,58 @@ function startGame() {
 }
 
 document.addEventListener("DOMContentLoaded", () => {
-  const startButton = document.getElementById("start-game");
+  const gridElement = document.getElementById("game-grid");
 
-  if (startButton) {
-    startButton.addEventListener("click", startGame);
-  }
+  document.getElementById("start-game")
+    ?.addEventListener("click", startGame);
 
-  document.getElementById("language")?.addEventListener(
-    "change",
-    event => setLanguage(event.target.value)
-  );
+  document.getElementById("language")
+    ?.addEventListener("change", event => {
+      setLanguage(event.target.value);
+    });
 
-  document.getElementById("difficulty")?.addEventListener(
-    "change",
-    event => setDifficulty(event.target.value)
-  );
+  document.getElementById("difficulty")
+    ?.addEventListener("change", event => {
+      setDifficulty(event.target.value);
+    });
+
+  if (!gridElement) return;
+
+  gridElement.addEventListener("pointerdown", event => {
+    const cell = event.target.closest(".grid-cell");
+
+    if (!cell) return;
+
+    event.preventDefault();
+    startSelection(cell, event.pointerId);
+  });
+
+  document.addEventListener("pointermove", event => {
+    if (
+      !state.dragging ||
+      event.pointerId !== state.pointerId
+    ) return;
+
+    const cell = getCellFromPoint(event.clientX, event.clientY);
+
+    if (cell) {
+      updateSelection(cell);
+    }
+  });
+
+  document.addEventListener("pointerup", event => {
+    if (event.pointerId === state.pointerId) {
+      finishSelection();
+    }
+  });
+
+  document.addEventListener("pointercancel", event => {
+    if (event.pointerId === state.pointerId) {
+      state.dragging = false;
+      state.pointerId = null;
+      state.selectedCells = [];
+      state.direction = null;
+      highlightSelection();
+    }
+  });
 });
