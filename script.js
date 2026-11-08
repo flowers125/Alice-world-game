@@ -272,6 +272,18 @@ function applyLanguage() {
     ? "Tìm các từ ẩn bằng cách kéo qua những chữ cái theo đường thẳng: ngang, dọc hoặc chéo. Từ có thể xuất hiện theo cả hai chiều. Mỗi từ chỉ được tính điểm một lần. Bạn có 60 giây!"
     : "Find hidden words by dragging in a straight line: horizontally, vertically, or diagonally. Words may appear in either direction. Each word scores only once. You have 60 seconds!";
   $("close-help").textContent = vi ? "Đã hiểu" : "Got it";
+  $("google-sign-in").textContent = vi ? "Đăng nhập Google" : "Sign in with Google";
+  $("sign-out").textContent = vi ? "Đăng xuất" : "Sign out";
+  $("display-name-label").textContent = vi ? "Tên hiển thị" : "Display name";
+  $("display-name").placeholder = vi ? "Tên hiển thị" : "Display name";
+  $("save-profile").textContent = vi ? "Lưu tên" : "Save name";
+  $("leaderboard-button").textContent = vi ? "Bảng xếp hạng" : "Leaderboard";
+  $("leaderboard-title").textContent = vi ? "Bảng xếp hạng" : "Leaderboard";
+  $("close-leaderboard").textContent = vi ? "Đóng" : "Close";
+  $("leaderboard-difficulty").options[0].textContent = vi ? "Bình thường" : "Normal";
+  $("leaderboard-difficulty").options[1].textContent = vi ? "Rất khó" : "Very Hard";
+  $("language").setAttribute("aria-label", vi ? "Ngôn ngữ" : "Language");
+  $("difficulty").setAttribute("aria-label", vi ? "Độ khó" : "Difficulty");
 }
 
 function changeLanguage(value) {
