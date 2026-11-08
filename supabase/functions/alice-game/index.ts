@@ -84,11 +84,29 @@ Deno.serve(async (req: Request) => {
     if (action === "start") {
       const language = body.language === "en" ? "en" : "vi";
       const difficulty = body.difficulty === "very-hard" ? "very-hard" : "normal";
-      const {data: dictionary,error:dictError} = await admin
-        .from("dictionary_words").select("word,normalized")
-        .eq("language",language).eq("is_active",true).limit(5000);
-      if (dictError) throw dictError;
-      if (!dictionary?.length) return reply({error:"Dictionary is empty"},503);
+      const {count:dictionaryCount,error:countError} = await admin
+        .from("dictionary_words").select("id",{count:"exact",head:true})
+        .eq("language",language).eq("is_active",true);
+      if (countError) throw countError;
+      if (!dictionaryCount) return reply({error:"Dictionary is empty"},503);
+
+      // Read a shuffled window in pages so projects with a 1,000-row API cap
+      // still use a broad slice of the dictionary instead of only page one.
+      const sampleSize = Math.min(5000,dictionaryCount);
+      const maxOffset = Math.max(0,dictionaryCount-sampleSize);
+      const startOffset = Math.floor(Math.random()*(maxOffset+1));
+      const dictionary:any[] = [];
+      for (let offset=0; offset<sampleSize; offset+=1000) {
+        const from = startOffset+offset;
+        const to = Math.min(startOffset+sampleSize-1,from+999);
+        const {data,error} = await admin.from("dictionary_words")
+          .select("word,normalized").eq("language",language).eq("is_active",true)
+          .order("normalized").range(from,to);
+        if (error) throw error;
+        dictionary.push(...(data||[]));
+        if (!data?.length || data.length<to-from+1) break;
+      }
+      if (!dictionary.length) return reply({error:"Dictionary is empty"},503);
       const candidates = shuffle(dictionary.filter((x:any)=>Array.from(x.normalized || "").length>=2 && Array.from(x.normalized || "").length<=10));
       const {board,placed} = makeBoard(candidates,language);
       if (placed.length < 5) return reply({error:"Not enough eligible dictionary words"},503);
