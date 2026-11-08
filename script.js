@@ -339,7 +339,6 @@ function paintSelection() {
 function finishRound() {
   clearInterval(state.timer);
   state.running = false;
-  state.pointerDown = false;
   state.selected = [];
   paintSelection();
   renderWordBuilder();
