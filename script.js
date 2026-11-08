@@ -284,6 +284,17 @@ function applyLanguage() {
   $("leaderboard-difficulty").options[1].textContent = vi ? "Rất khó" : "Very Hard";
   $("language").setAttribute("aria-label", vi ? "Ngôn ngữ" : "Language");
   $("difficulty").setAttribute("aria-label", vi ? "Độ khó" : "Difficulty");
+  if (state.user) {
+    $("account-status").textContent = vi ? "Đã đăng nhập Google." : "Signed in with Google.";
+  } else if (!window.ALICE_SUPABASE_URL || !window.ALICE_SUPABASE_ANON_KEY) {
+    $("account-status").textContent = vi
+      ? "Chế độ khách · Chưa cấu hình Supabase."
+      : "Guest mode · Supabase is not configured.";
+  } else {
+    $("account-status").textContent = vi
+      ? "Đang chơi với tư cách khách · Điểm không được lưu online."
+      : "Playing as guest · Scores are not saved online.";
+  }
 }
 
 function changeLanguage(value) {
