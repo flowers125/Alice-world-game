@@ -178,6 +178,7 @@
           const result=await callGame("finish",{round_id:roundId});
           state.score=result.score;
           updateHUD();
+          showLeaderboard();
           $ui("game-message").textContent=state.language==="vi"
             ? "Hết giờ! Điểm: "+result.score+" · Kỷ lục cá nhân: "+result.personal_best
             : "Time's up! Score: "+result.score+" · Personal best: "+result.personal_best;
@@ -253,9 +254,9 @@
       $ui("leaderboard-dialog").showModal();await showLeaderboard();
     });
     $ui("leaderboard-language").addEventListener("change",showLeaderboard);
-    $ui("leaderboard-difficulty").addEventListener("change",showLeaderboard);
-    $ui("inline-leaderboard-language").addEventListener("change",showLeaderboard);
-    $ui("inline-leaderboard-difficulty").addEventListener("change",showLeaderboard);
+    $ui("leaderboard-difficulty").addEventListener("change",()=>{$ui("inline-leaderboard-language").value=$ui("leaderboard-language").value;$ui("inline-leaderboard-difficulty").value=$ui("leaderboard-difficulty").value;showLeaderboard();});
+    $ui("inline-leaderboard-language").addEventListener("change",()=>{$ui("leaderboard-language").value=$ui("inline-leaderboard-language").value;showLeaderboard();});
+    $ui("inline-leaderboard-difficulty").addEventListener("change",()=>{$ui("leaderboard-difficulty").value=$ui("inline-leaderboard-difficulty").value;showLeaderboard();});
     $ui("close-leaderboard").addEventListener("click",()=>$ui("leaderboard-dialog").close());
 
     if(!hasConfig()){
@@ -263,6 +264,7 @@
       $ui("account-status").textContent=state.language==="vi"?"Chế độ khách · Chưa cấu hình Supabase.":"Guest mode · Supabase is not configured.";
       state.backendReady=true;
       $ui("start-game").disabled=!state.dictionaryReady;
+      showLeaderboard();
       return;
     }
     client=window.supabase.createClient(window.ALICE_SUPABASE_URL,window.ALICE_SUPABASE_ANON_KEY);
