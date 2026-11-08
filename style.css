@@ -117,3 +117,50 @@ dialog { max-height: 85vh; overflow: auto; }
 .grid-cell.word-found{position:relative;z-index:2;animation:found-pop .62s cubic-bezier(.2,.9,.25,1.35) both;background:#f2c96d;color:#49340c;box-shadow:0 0 0 2px #fff1bd,0 5px 12px rgba(130,94,24,.24)}
 @keyframes found-pop{0%{transform:scale(1)}38%{transform:scale(1.28) translateY(-3px)}68%{transform:scale(.92)}100%{transform:scale(1)}}
 @media(max-width:800px){.game-layout{grid-template-columns:minmax(0,1fr)}.leaderboard-panel{order:2}#inline-leaderboard-list{max-height:320px}#game-grid{gap:2px}.grid-cell{font-size:clamp(7px,2.4vw,13px);border-radius:3px}}
+
+
+/* Compact controls; keep the 300-cell board as the main focus. */
+.container { max-width: 1500px; width: calc(100% - 24px); padding: 12px 0; }
+header { margin-bottom: 10px; }
+header h1 { font-size: clamp(21px, 3vw, 30px); margin-bottom: 2px; }
+header p { font-size: 12px; }
+.card { padding: 10px; border-radius: 14px; }
+.account-panel {
+  display:flex; align-items:center; flex-wrap:wrap; gap:5px 10px;
+  padding:5px 8px; margin-bottom:7px; border-radius:9px;
+}
+.account-actions { gap:5px; }
+.account-panel p { margin:0; font-size:11px; }
+.account-panel label { margin:0; font-size:11px; }
+.account-actions button,.account-panel button { padding:5px 8px; border-radius:7px; font-size:11px; }
+.profile-edit { gap:5px; }
+.profile-edit input { padding:6px 8px; font-size:12px; }
+.profile-edit button { padding:6px 9px; font-size:11px; }
+.game-menu,.utility-menu { justify-content:flex-start; gap:6px; margin-bottom:7px; }
+.game-menu select,.leaderboard-controls select { min-width:0; width:auto; padding:5px 8px; border-radius:7px; font-size:11px; }
+.utility-menu button { padding:5px 8px; border-radius:7px; font-size:11px; }
+.game-info { display:flex; justify-content:center; gap:24px; padding:5px 8px; margin:5px 0; border-radius:8px; }
+.game-info p { font-size:12px; }
+.game-info strong { font-size:15px; }
+.topic-label {
+  display:table; margin:8px auto 5px; padding:5px 13px; border-radius:999px;
+  background:#f0eafb; color:#625184; font-size:13px; font-weight:700;
+}
+.game-layout { display:block; }
+.leaderboard-panel { display:none !important; }
+#game-grid { margin:7px auto; gap:clamp(1px,.35vw,4px); }
+.grid-cell { border-radius:4px; }
+.game-actions { margin-top:7px; }
+#start-game { min-width:112px; padding:8px 18px; font-size:13px; }
+#game-message { min-height:18px; margin:5px 0 0; font-size:12px; }
+@media(max-width:600px) {
+  .container { width:calc(100% - 10px); padding:6px 0; }
+  .card { padding:6px; }
+  .account-panel { gap:4px 7px; padding:4px 6px; }
+  .game-menu,.utility-menu { gap:4px; }
+  .game-menu select { padding:5px 6px; font-size:10px; }
+  .utility-menu button { flex:0 0 auto; padding:5px 7px; font-size:10px; }
+  .game-info { gap:18px; padding:4px; }
+  #game-grid { gap:1px; margin:6px auto; }
+  .grid-cell { border-radius:2px; font-size:clamp(7px, 3.7vw, 16px); }
+}
