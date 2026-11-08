@@ -82,7 +82,7 @@
       secureRound=true;
       state.grid=result.board;
       state.topic=result.topic || null;
-      $ui("topic-label").textContent=(state.language==="vi"?"Chủ đề: ":"Topic: ")+(state.topic?.label || "");
+      showRoundTopic(state.topic);
       state.words=[];
       state.found.clear();
       state.selected=[];
