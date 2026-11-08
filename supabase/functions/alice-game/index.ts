@@ -51,7 +51,7 @@ function placeWord(board: string[][], word: string) {
 function makeBoard(words: {word:string;normalized:string}[], language: string, difficulty: string) {
   const board = Array.from({length:15},()=>Array(20).fill(""));
   const placed: string[] = [];
-  const minWordLength = difficulty === "very-hard" ? 4 : 2;
+  const minWordLength = 2;
   const targetLimit = difficulty === "very-hard" ? 42 : 36;
   const orderedWords = shuffle(words).sort((a,b)=>
     Array.from(normalize(b.normalized)).length-Array.from(normalize(a.normalized)).length
@@ -111,7 +111,7 @@ Deno.serve(async (req: Request) => {
         if (!data?.length || data.length<to-from+1) break;
       }
       if (!dictionary.length) return reply({error:"Dictionary is empty"},503);
-      const minWordLength = difficulty === "very-hard" ? 4 : 2;
+      const minWordLength = 2;
       const candidates = shuffle(dictionary.filter((x:any)=>{
         const length=Array.from(x.normalized || "").length;
         return length>=minWordLength && length<=10;
@@ -119,13 +119,13 @@ Deno.serve(async (req: Request) => {
       const {board,placed} = makeBoard(candidates,language,difficulty);
       if (placed.length < 5) return reply({error:"Not enough eligible dictionary words"},503);
       const started = new Date();
-      const expires = new Date(started.getTime()+60000);
+      const expires = new Date(started.getTime()+150000);
       const {data:round,error:roundError} = await admin.from("game_rounds").insert({
         user_id:user.id, language,difficulty,board,target_words:placed,
         started_at:started.toISOString(),expires_at:expires.toISOString()
       }).select("id,started_at,expires_at").single();
       if (roundError) throw roundError;
-      return reply({round_id:round.id,board,started_at:round.started_at,expires_at:round.expires_at,seconds:60});
+      return reply({round_id:round.id,board,started_at:round.started_at,expires_at:round.expires_at,seconds:150});
     }
 
     if (action === "claim") {
