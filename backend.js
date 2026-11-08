@@ -250,7 +250,8 @@
 
     $ui("google-sign-in").addEventListener("click",async()=>{
       if(!client)return;
-      const {error}=await client.auth.signInWithOAuth({provider:"google",options:{redirectTo:"https://alice-world-game.nguyenvuonglinh1.workers.dev"}});
+      const redirectTo=window.location.origin;
+      const {error}=await client.auth.signInWithOAuth({provider:"google",options:{redirectTo}});
       if(error)$ui("account-status").textContent=error.message;
     });
     $ui("sign-out").addEventListener("click",async()=>{
