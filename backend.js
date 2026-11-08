@@ -71,14 +71,15 @@
       state.found.clear();
       state.selected=[];
       state.direction=null;
-      state.seconds=ROUND_SECONDS;
+      const expiresAt=Date.parse(result.expires_at);
+      state.seconds=Math.max(0,Math.ceil((expiresAt-Date.now())/1000));
       state.score=0;
       state.running=true;
       $ui("game-message").textContent="";
       renderGrid();
       updateHUD();
       state.timer=setInterval(()=>{
-        state.seconds=Math.max(0,state.seconds-1);
+        state.seconds=Math.max(0,Math.ceil((expiresAt-Date.now())/1000));
         updateHUD();
         if(state.seconds===0) finishRound();
       },1000);
