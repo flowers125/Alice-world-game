@@ -32,7 +32,7 @@ Very Hard mode:
 
 ## Security checks
 - [ ] Browser roles cannot directly read `game_rounds`, `round_words`, or `personal_bests`.
-- [ ] Guest users can read only the curated leaderboard RPC output.
+- [ ] Guest leaderboard requests use only the curated leaderboard RPC; no personal or round data is exposed.
 - [ ] Edge Function rejects requests without a valid user session.
 
 ## Deployment prerequisites
