@@ -25,7 +25,7 @@ The function requires an authenticated Supabase session (`verify_jwt = true`) an
 - `claim`: validates a continuous straight path against the hidden words and records a word atomically.
 - `finish`: closes the round and updates the personal best.
 
-The database stores profiles, dictionary words, rounds, found words, and personal bests. The public leaderboard RPC returns display names and scores only.
+The database stores profiles, dictionary words, rounds, found words, and personal bests. The public leaderboard RPC returns display names, scores, and achievement times only. Direct row-level access to `personal_bests` is blocked by RLS so user and round UUIDs are not exposed through that table.
 
 ### Google sign-in setup
 
