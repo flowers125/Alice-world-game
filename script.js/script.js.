@@ -1,0 +1,348 @@
+"use strict";
+
+const CONFIG = {
+  gridSize: 10,
+  roundSeconds: 60,
+  languages: ["vi", "en"],
+  difficulties: ["normal", "very-hard"]
+};
+
+const WORDS = {
+  vi: [
+    "alice", "hoa", "nang", "may", "trang",
+    "bien", "rung", "sao", "mua", "gio",
+    "sach", "meo", "chim", "cay", "nha",
+    "duong", "nuoc", "lua", "muahe", "banmai"
+  ],
+  en: [
+    "alice", "flower", "sun", "moon", "cloud",
+    "ocean", "forest", "star", "rain", "wind",
+    "book", "cat", "bird", "tree", "house",
+    "river", "water", "light", "dream", "spring"
+  ]
+};
+
+const DIRECTIONS = [
+  [0, 1], [0, -1],
+  [1, 0], [-1, 0],
+  [1, 1], [1, -1],
+  [-1, 1], [-1, -1]
+];
+
+const state = {
+  language: "vi",
+  difficulty: "normal",
+  grid: [],
+  words: [],
+  foundWords: new Set(),
+  selectedCells: [],
+  secondsLeft: CONFIG.roundSeconds,
+  score: 0,
+  timer: null,
+  running: false
+};
+
+function normalizeWord(word) {
+  return word
+    .normalize("NFC")
+    .toLocaleLowerCase(state.language === "vi" ? "vi" : "en")
+    .replace(/\s+/g, "");
+}
+
+function calculateScore(count) {
+  if (count === 0) return 0;
+
+  let base = count === 1 ? 2 : count === 2 ? 5 : 12;
+
+  if (state.difficulty === "very-hard") {
+    base += count * 3;
+  }
+
+  return base;
+}
+
+function createEmptyGrid() {
+  return Array.from(
+    { length: CONFIG.gridSize },
+    () => Array(CONFIG.gridSize).fill("")
+  );
+}
+
+function canPlace(grid, word, row, col, dr, dc) {
+  for (let i = 0; i < word.length; i++) {
+    const r = row + dr * i;
+    const c = col + dc * i;
+
+    if (
+      r < 0 || r >= CONFIG.gridSize ||
+      c < 0 || c >= CONFIG.gridSize
+    ) return false;
+
+    const existing = grid[r][c];
+
+    if (existing && existing !== word[i]) return false;
+  }
+
+  return true;
+}
+
+function placeWord(grid, word) {
+  const shuffledDirections = [...DIRECTIONS]
+    .sort(() => Math.random() - 0.5);
+
+  for (let attempt = 0; attempt < 150; attempt++) {
+    const [dr, dc] = shuffledDirections[
+      attempt % shuffledDirections.length
+    ];
+
+    const row = Math.floor(Math.random() * CONFIG.gridSize);
+    const col = Math.floor(Math.random() * CONFIG.gridSize);
+
+    if (!canPlace(grid, word, row, col, dr, dc)) continue;
+
+    for (let i = 0; i < word.length; i++) {
+      grid[row + dr * i][col + dc * i] = word[i];
+    }
+
+    return true;
+  }
+
+  return false;
+}
+
+function randomLetter() {
+  const alphabet = state.language === "vi"
+    ? "aăâbcdđeêghiklmnoôơpqrstuưvxy"
+    : "abcdefghijklmnopqrstuvwxyz";
+
+  return alphabet[Math.floor(Math.random() * alphabet.length)];
+}
+
+function generateRound() {
+  clearInterval(state.timer);
+
+  state.grid = createEmptyGrid();
+  state.foundWords.clear();
+  state.selectedCells = [];
+  state.score = 0;
+  state.secondsLeft = CONFIG.roundSeconds;
+
+  const source = WORDS[state.language];
+
+  const pool = source.filter(word =>
+    word.length <= CONFIG.gridSize
+  );
+
+  const shuffled = [...pool].sort(() => Math.random() - 0.5);
+
+  state.words = [];
+
+  for (const word of shuffled) {
+    if (placeWord(state.grid, word)) {
+      state.words.push(word);
+    }
+  }
+
+  for (let r = 0; r < CONFIG.gridSize; r++) {
+    for (let c = 0; c < CONFIG.gridSize; c++) {
+      if (!state.grid[r][c]) {
+        state.grid[r][c] = randomLetter();
+      }
+    }
+  }
+
+  state.running = true;
+
+  renderGame();
+  updateScore();
+
+  state.timer = setInterval(() => {
+    state.secondsLeft--;
+    updateTimer();
+
+    if (state.secondsLeft <= 0) {
+      endRound();
+    }
+  }, 1000);
+}
+
+function renderGame() {
+  const gridElement = document.getElementById("game-grid");
+  if (!gridElement) return;
+
+  gridElement.innerHTML = "";
+
+  state.grid.forEach((row, r) => {
+    row.forEach((letter, c) => {
+      const cell = document.createElement("button");
+
+      cell.type = "button";
+      cell.className = "grid-cell";
+      cell.textContent = letter.toLocaleUpperCase();
+
+      cell.dataset.row = r;
+      cell.dataset.col = c;
+
+      cell.addEventListener("click", () => {
+        selectCell(r, c);
+      });
+
+      gridElement.appendChild(cell);
+    });
+  });
+}
+
+function selectCell(row, col) {
+  if (!state.running) return;
+
+  const cell = { row, col };
+  const last = state.selectedCells.at(-1);
+
+  if (last && last.row === row && last.col === col) {
+    return;
+  }
+
+  state.selectedCells.push(cell);
+
+  if (state.selectedCells.length > 10) {
+    state.selectedCells = [cell];
+  }
+
+  highlightSelection();
+  checkSelection();
+}
+
+function highlightSelection() {
+  document.querySelectorAll(".grid-cell").forEach(cell => {
+    cell.classList.remove("selected");
+  });
+
+  state.selectedCells.forEach(({ row, col }) => {
+    const cell = document.querySelector(
+      `.grid-cell[data-row="${row}"][data-col="${col}"]`
+    );
+
+    if (cell) cell.classList.add("selected");
+  });
+}
+
+function checkSelection() {
+  if (state.selectedCells.length < 2) return;
+
+  const word = state.selectedCells
+    .map(({ row, col }) => state.grid[row][col])
+    .join("");
+
+  const reversed = [...word].reverse().join("");
+
+  const found = state.words.find(w =>
+    (w === word || w === reversed) &&
+    !state.foundWords.has(w)
+  );
+
+  if (!found) return;
+
+  state.foundWords.add(found);
+  state.score = calculateScore(state.foundWords.size);
+
+  updateScore();
+  playSound("success");
+
+  state.selectedCells = [];
+  highlightSelection();
+}
+
+function updateScore() {
+  const element = document.getElementById("score");
+
+  if (element) {
+    element.textContent = state.score;
+  }
+}
+
+function updateTimer() {
+  const element = document.getElementById("timer");
+
+  if (element) {
+    element.textContent = state.secondsLeft;
+  }
+}
+
+function endRound() {
+  clearInterval(state.timer);
+  state.running = false;
+
+  const message = document.getElementById("game-message");
+
+  if (message) {
+    message.textContent =
+      `Hết giờ! Điểm của bạn: ${state.score}`;
+  }
+
+  playSound("end");
+}
+
+let audioContext;
+
+function playSound(type) {
+  try {
+    const AudioContextClass =
+      window.AudioContext || window.webkitAudioContext;
+
+    if (!AudioContextClass) return;
+
+    audioContext ||= new AudioContextClass();
+
+    const oscillator = audioContext.createOscillator();
+    const gain = audioContext.createGain();
+
+    oscillator.connect(gain);
+    gain.connect(audioContext.destination);
+
+    oscillator.frequency.value =
+      type === "success" ? 660 : 220;
+
+    gain.gain.value = 0.04;
+
+    oscillator.start();
+    oscillator.stop(audioContext.currentTime + 0.12);
+  } catch {
+    // Sound is optional.
+  }
+}
+
+function setLanguage(language) {
+  if (!CONFIG.languages.includes(language)) return;
+
+  state.language = language;
+  generateRound();
+}
+
+function setDifficulty(difficulty) {
+  if (!CONFIG.difficulties.includes(difficulty)) return;
+
+  state.difficulty = difficulty;
+  generateRound();
+}
+
+function startGame() {
+  generateRound();
+}
+
+document.addEventListener("DOMContentLoaded", () => {
+  const startButton = document.getElementById("start-game");
+
+  if (startButton) {
+    startButton.addEventListener("click", startGame);
+  }
+
+  document.getElementById("language")?.addEventListener(
+    "change",
+    event => setLanguage(event.target.value)
+  );
+
+  document.getElementById("difficulty")?.addEventListener(
+    "change",
+    event => setDifficulty(event.target.value)
+  );
+});
