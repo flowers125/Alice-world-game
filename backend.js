@@ -12,7 +12,8 @@
   let session = null;
   let roundId = null;
   let secureRound = false;
-  let claimPending = false;
+  let claimQueue = Promise.resolve();
+  let finishPromise = null;
 
   async function callGame(action, payload = {}) {
     const {data,error} = await client.functions.invoke("alice-game",{body:{action,...payload}});
@@ -40,6 +41,8 @@
   }
 
   async function startSecureRound() {
+    if (finishPromise) await finishPromise;
+    else if (state.running) await finishRound();
     clearInterval(state.timer);
     state.running=false;
     $ui("start-game").disabled=true;
@@ -86,14 +89,17 @@
     state.selected=[];
     state.direction=null;
     paintSelection();
-    if(cells.length>1&&!claimPending) claimSecureWord(cells);
+    if(cells.length>1){
+      const selectedRoundId=roundId;
+      claimQueue=claimQueue.then(()=>claimSecureWord(cells,selectedRoundId));
+    }
   };
 
-  async function claimSecureWord(cells){
-    if(!roundId||!state.running||claimPending)return;
-    claimPending=true;
+  async function claimSecureWord(cells,targetRoundId){
+    if(!targetRoundId)return;
     try{
-      const result=await callGame("claim",{round_id:roundId,cells});
+      const result=await callGame("claim",{round_id:targetRoundId,cells});
+      if(roundId!==targetRoundId)return;
       if(!result.valid){
         $ui("game-message").textContent=state.language==="vi"?"Từ không hợp lệ hoặc đã được tính.":"Invalid or already-counted word.";
         playTone(190);
@@ -105,28 +111,33 @@
       playTone(660);
       updateHUD();
     }catch(error){
-      $ui("game-message").textContent=error.message;
-    }finally{claimPending=false;}
+      if(roundId===targetRoundId)$ui("game-message").textContent=error.message;
+    }
   }
 
-  finishRound=async function(){
-    if(!state.running)return;
-    clearInterval(state.timer);
-    state.running=false;
-    state.pointerDown=false;
-    state.selected=[];
-    paintSelection();
-    if(secureRound&&roundId){
-      try{
-        const result=await callGame("finish",{round_id:roundId});
-        state.score=result.score;
-        updateHUD();
-        $ui("game-message").textContent=state.language==="vi"
-          ? "Hết giờ! Điểm: "+result.score+" · Kỷ lục cá nhân: "+result.personal_best
-          : "Time's up! Score: "+result.score+" · Personal best: "+result.personal_best;
-      }catch(error){$ui("game-message").textContent=error.message;}
-    }else{localFinishRound();}
-    playTone(330);
+  finishRound=function(){
+    if(finishPromise)return finishPromise;
+    if(!state.running)return Promise.resolve();
+    finishPromise=(async()=>{
+      clearInterval(state.timer);
+      state.running=false;
+      state.pointerDown=false;
+      state.selected=[];
+      paintSelection();
+      if(secureRound&&roundId){
+        await claimQueue;
+        try{
+          const result=await callGame("finish",{round_id:roundId});
+          state.score=result.score;
+          updateHUD();
+          $ui("game-message").textContent=state.language==="vi"
+            ? "Hết giờ! Điểm: "+result.score+" · Kỷ lục cá nhân: "+result.personal_best
+            : "Time's up! Score: "+result.score+" · Personal best: "+result.personal_best;
+        }catch(error){$ui("game-message").textContent=error.message;}
+      }else{localFinishRound();}
+      playTone(330);
+    })().finally(()=>{finishPromise=null;});
+    return finishPromise;
   };
 
   async function saveProfile(event){
