@@ -57,6 +57,7 @@ const normalize = word => Array.from(
 
 function scoreFor(count) {
   const base = count === 1 ? 2 : count === 2 ? 5 : count >= 3 ? 12 : 0;
+  if (state.difficulty === "very-easy") return Math.floor(base / 2);
   return base + (state.difficulty === "very-hard" ? count * 3 : 0);
 }
 
@@ -87,8 +88,8 @@ function placeWord(grid, letters) {
 function selectCandidates(sourceWords, difficulty) {
   const minWordLength = difficulty === "very-hard" ? 4 : 2;
   const targetLimit = difficulty === "very-hard" ? 28 : 16;
-  return shuffle([...new Set(sourceWords.map(normalize)
-    .filter(w => w.length >= minWordLength && w.length <= SIZE)
+  return shuffle([...new Set(sourceWords
+    .filter(raw => !/\\s/u.test(raw.trim()))\n    .map(normalize)\n    .filter(w => w.length >= minWordLength && w.length <= SIZE)
     .map(w => w.join("")))])
     .slice(0, targetLimit)
     .map(word => Array.from(word))
@@ -271,11 +272,12 @@ function applyLanguage() {
   $("sound-button").textContent = vi
     ? (state.soundOn ? "Âm thanh: Bật" : "Âm thanh: Tắt")
     : (state.soundOn ? "Sound: On" : "Sound: Off");
-  $("difficulty").options[0].textContent = vi ? "Bình thường" : "Normal";
-  $("difficulty").options[1].textContent = vi ? "Rất khó" : "Very Hard";
+  $("difficulty").options[0].textContent = vi ? "Rất dễ" : "Very Easy";
+  $("difficulty").options[1].textContent = vi ? "Bình thường" : "Normal";
+  $("difficulty").options[2].textContent = vi ? "Rất khó" : "Very Hard";
   $("help-title").textContent = vi ? "Cách chơi" : "How to play";
   $("help-copy").textContent = vi
-    ? "Tìm các từ ẩn bằng cách kéo qua những chữ cái theo đường thẳng: ngang, dọc hoặc chéo. Từ có thể xuất hiện theo cả hai chiều. Mỗi từ chỉ được tính điểm một lần. Bạn có 60 giây! Chế độ Rất khó có nhiều từ dài hơn và thưởng thêm 3 điểm mỗi từ."
+    ? "Tìm các từ ẩn bằng cách kéo qua những chữ cái theo đường thẳng: ngang, dọc hoặc chéo. Từ có thể xuất hiện theo cả hai chiều. Mỗi từ chỉ được tính điểm một lần. Bạn có 60 giây! Rất dễ nhận một nửa điểm của Bình thường; Rất khó yêu cầu từ dài ít nhất 4 chữ và thưởng thêm 3 điểm mỗi từ."
     : "Find hidden words by dragging in a straight line: horizontally, vertically, or diagonally. Words may appear in either direction. Each word scores only once. You have 60 seconds! Very Hard has more words, with a minimum length of 4 letters, and awards 3 bonus points per word.";
   $("close-help").textContent = vi ? "Đã hiểu" : "Got it";
   $("google-sign-in").textContent = vi ? "Đăng nhập Google" : "Sign in with Google";
@@ -286,8 +288,9 @@ function applyLanguage() {
   $("leaderboard-button").textContent = vi ? "Bảng xếp hạng" : "Leaderboard";
   $("leaderboard-title").textContent = vi ? "Bảng xếp hạng" : "Leaderboard";
   $("close-leaderboard").textContent = vi ? "Đóng" : "Close";
-  $("leaderboard-difficulty").options[0].textContent = vi ? "Bình thường" : "Normal";
-  $("leaderboard-difficulty").options[1].textContent = vi ? "Rất khó" : "Very Hard";
+  $("leaderboard-difficulty").options[0].textContent = vi ? "Rất dễ" : "Very Easy";
+  $("leaderboard-difficulty").options[1].textContent = vi ? "Bình thường" : "Normal";
+  $("leaderboard-difficulty").options[2].textContent = vi ? "Rất khó" : "Very Hard";
   $("language").setAttribute("aria-label", vi ? "Ngôn ngữ" : "Language");
   $("difficulty").setAttribute("aria-label", vi ? "Độ khó" : "Difficulty");
   if (state.user) {
@@ -332,7 +335,7 @@ async function loadDictionaries() {
   $("game-message").textContent = "";
 }
 
-document.addEventListener("DOMContentLoaded", () => {
+document.addEventListener("DOMContentLoaded", () => {\n  const artSets = [["🌼","🌿","🍃","🌷","🦋"],["🐇","🌸","🍀","🐝","🌱"],["🐈","🌻","🍃","🦋","🌼"],["🦊","🌿","🌷","🍀","🐦"]];\n  const art = document.createElement("div");\n  art.className = "ambient-art";\n  art.setAttribute("aria-hidden", "true");\n  const motifs = artSets[Math.floor(Math.random() * artSets.length)];\n  for (let i = 0; i < 18; i++) {\n    const item = document.createElement("span");\n    item.textContent = motifs[i % motifs.length];\n    item.style.left = (4 + Math.random() * 92) + "%";\n    item.style.top = (3 + Math.random() * 94) + "%";\n    item.style.fontSize = (18 + Math.random() * 22) + "px";\n    item.style.transform = `rotate(${-25 + Math.random() * 50}deg)`;\n    art.appendChild(item);\n  }\n  document.body.prepend(art);
   $("start-game").addEventListener("click", generateRound);
   loadDictionaries().catch(() => {
     state.dictionaryReady = true;
