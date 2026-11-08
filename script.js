@@ -322,7 +322,7 @@ async function loadDictionaries() {
   }));
   results.forEach(([language, words]) => { state.dictionary[language] = words; });
   state.dictionaryReady = true;
-  $("start-game").disabled = false;
+  $("start-game").disabled = state.backendReady === false;
   $("game-message").textContent = "";
 }
 
@@ -330,7 +330,7 @@ document.addEventListener("DOMContentLoaded", () => {
   $("start-game").addEventListener("click", generateRound);
   loadDictionaries().catch(() => {
     state.dictionaryReady = true;
-    $("start-game").disabled = false;
+    $("start-game").disabled = state.backendReady === false;
     $("game-message").textContent = state.language === "vi" ? "Dùng bộ từ dự phòng." : "Using fallback words.";
   });
   applyLanguage();
