@@ -37,7 +37,7 @@ The function requires an authenticated Supabase session (`verify_jwt = true`) an
 - `claim`: validates a continuous straight path against the hidden words and records a word atomically.
 - `finish`: closes the round and updates the personal best.
 
-The database stores profiles, dictionary words, rounds, found words, and personal bests. The public leaderboard RPC returns display names, scores, and achievement times only. Direct access to `personal_bests` is blocked by RLS. Browser roles also have no direct access to `game_rounds` or `round_words`, keeping hidden target words and round internals server-only. Signed-in users can read only their own profile row; public names are returned through the curated leaderboard RPC.
+The database stores profiles, dictionary words, rounds, found words, and personal bests. The public leaderboard RPC returns display names, scores, and achievement times only. Browser roles have no direct access to `dictionary_words`, `personal_bests`, `game_rounds`, or `round_words`; the Edge Function uses the service role for these operations. Signed-in users can read only their own profile row; public names are returned through the curated leaderboard RPC.
 
 ### Google sign-in setup
 
@@ -73,4 +73,4 @@ The text dictionaries are in `dictionaries/vi.txt` and `dictionaries/en.txt`; th
 
 ## Testing
 
-See [TESTING.md](TESTING.md) for the guest, scoring, signed-in, and security acceptance checklist. GitHub Actions validates frontend JavaScript syntax, required assets, and the Supabase Edge Function type check on pushes to `main` and pull requests.
+See [TESTING.md](TESTING.md) for the guest, scoring, signed-in, and security acceptance checklist. GitHub Actions validates frontend JavaScript syntax, runs core game-rule tests, checks required assets, and type-checks the Supabase Edge Function on pushes to `main` and pull requests.
