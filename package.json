@@ -1,0 +1,11 @@
+{
+  "name": "alice-word-game-tools",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "import:dictionaries": "node scripts/import-dictionaries.mjs"
+  },
+  "dependencies": {
+    "@supabase/supabase-js": "^2.57.0"
+  }
+}
