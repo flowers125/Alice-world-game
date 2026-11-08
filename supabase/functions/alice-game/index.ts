@@ -183,21 +183,25 @@ Deno.serve(async (req) => {
       }
       const checked = validatePath(body.cells, round.grid as string[][]);
       if (!checked) return json({ error: "Invalid straight-line selection" }, 400);
-      const { data: target } = await admin.from("round_words").select("word")
+      const { data: target } = await admin.from("round_words").select("word,path")
         .eq("round_id", roundId).in("word", [checked.word, checked.reversed]).maybeSingle();
       if (!target) return json({ error: "Word not found" }, 404);
+      const submitted = body.cells;
+      const expected = target.path as number[][];
+      const samePath = (a: number[][], b: number[][]) => JSON.stringify(a) === JSON.stringify(b);
+      if (!samePath(submitted, expected) && !samePath(submitted, [...expected].reverse())) {
+        return json({ error: "Selection does not match the hidden word path" }, 400);
+      }
 
-      const { error: foundError } = await admin.from("round_found_words").insert({
-        round_id: roundId, user_id: user.id, word: target.word,
+      const { data: claim, error: claimError } = await admin.rpc("claim_alice_word", {
+        p_round_id: roundId,
+        p_user_id: user.id,
+        p_word: target.word,
       });
-      if (foundError) return json({ error: "Word already claimed or invalid" }, 409);
-
-      const count = round.found_count + 1;
-      const score = scoreFor(count, round.difficulty);
-      const { error: updateError } = await admin.from("game_rounds")
-        .update({found_count:count,score}).eq("id",roundId).eq("user_id",user.id);
-      if (updateError) return json({ error: "Could not update score" }, 500);
-      return json({ found: true, foundCount: count, score });
+      if (claimError) return json({ error: "Could not validate word" }, 500);
+      const result = Array.isArray(claim) ? claim[0] : claim;
+      if (!result?.found) return json({ error: "Word already claimed or round ended" }, 409);
+      return json({ found: true, foundCount: result.found_count, score: result.score });
     }
 
     if (action === "finish-round") {
