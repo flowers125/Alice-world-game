@@ -13,8 +13,7 @@ const sandbox = {
   clearInterval() {},
 };
 vm.runInNewContext(
-  source + "
-globalThis.__gameTest = { state, scoreFor, normalize, placeWord, selectCandidates };",
+  source + "\nglobalThis.__gameTest = { state, scoreFor, normalize, placeWord, selectCandidates };",
   sandbox,
 );
 const { state, scoreFor, normalize, placeWord, selectCandidates } = sandbox.__gameTest;
