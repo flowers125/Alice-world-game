@@ -43,6 +43,10 @@
 
   async function startSecureRound() {
     clearInterval(state.timer);
+    state.running = false;
+    serverRound = false;
+    roundId = null;
+    state.serverMode = false;
     $ui("start-game").disabled = true;
     $ui("game-message").textContent = "Đang tạo lượt chơi...";
     try {
