@@ -1,7 +1,34 @@
--- Keep Very Easy scoring mathematically exact (including half points).
+-- Preserve exact half-points in Very Easy mode.
+drop view public.leaderboard;
 alter table public.game_rounds alter column score type numeric(10,1) using score::numeric(10,1);
 alter table public.personal_bests alter column score type numeric(10,1) using score::numeric(10,1);
 alter table public.round_words alter column points type numeric(10,1) using points::numeric(10,1);
+
+create view public.leaderboard
+with (security_barrier=true, security_invoker=true)
+as
+select pb.language, pb.difficulty, p.display_name, pb.score, pb.achieved_at
+from public.personal_bests pb
+join public.profiles p on p.id=pb.user_id;
+revoke all on public.leaderboard from public, anon, authenticated;
+grant all privileges on public.leaderboard to service_role;
+
+drop function public.get_alice_leaderboard(text,text,integer);
+create function public.get_alice_leaderboard(
+  p_language text, p_difficulty text, p_limit integer default 20
+)
+returns table(rank bigint, display_name text, score numeric(10,1), achieved_at timestamptz)
+language sql stable security definer set search_path = public
+as $$
+  select row_number() over(order by pb.score desc, pb.achieved_at asc) as rank,
+         p.display_name, pb.score, pb.achieved_at
+  from public.personal_bests pb
+  join public.profiles p on p.id=pb.user_id
+  where pb.language=p_language and pb.difficulty=p_difficulty
+  order by pb.score desc, pb.achieved_at asc
+  limit least(greatest(p_limit,1),20);
+$$;
+grant execute on function public.get_alice_leaderboard(text,text,integer) to anon, authenticated;
 
 create or replace function public.alice_record_word(
   p_round_id uuid, p_user_id uuid, p_normalized text, p_points integer default 0
@@ -49,21 +76,19 @@ declare
   best_score numeric(10,1);
 begin
   select * into r from public.game_rounds
-  where id=p_round_id and user_id=p_user_id
-  for update;
+  where id=p_round_id and user_id=p_user_id for update;
   if not found then return jsonb_build_object('ok',false,'reason','round_not_found'); end if;
-  if r.status = 'active' then
+  if r.status='active' then
     update public.game_rounds
-    set status = case when now() >= expires_at then 'expired' else 'finished' end,
-        finished_at = now()
-    where id = p_round_id
-    returning * into r;
+    set status=case when now()>=expires_at then 'expired' else 'finished' end,
+        finished_at=now()
+    where id=p_round_id returning * into r;
   end if;
   insert into public.personal_bests(user_id,language,difficulty,score,achieved_at,round_id)
-  values (p_user_id,r.language,r.difficulty,r.score,coalesce(r.finished_at,now()),r.id)
-  on conflict (user_id,language,difficulty) do update
-    set score=excluded.score, achieved_at=excluded.achieved_at, round_id=excluded.round_id
-    where excluded.score > public.personal_bests.score;
+  values(p_user_id,r.language,r.difficulty,r.score,coalesce(r.finished_at,now()),r.id)
+  on conflict(user_id,language,difficulty) do update
+    set score=excluded.score,achieved_at=excluded.achieved_at,round_id=excluded.round_id
+    where excluded.score>public.personal_bests.score;
   select score into best_score from public.personal_bests
   where user_id=p_user_id and language=r.language and difficulty=r.difficulty;
   return jsonb_build_object('ok',true,'score',r.score,'personal_best',best_score,'status',r.status);
