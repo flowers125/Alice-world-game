@@ -42,6 +42,25 @@ function chooseTopic(language) {
   return {id:topic.id,label:topic[language],words:topic.words[language]};
 }
 
+let topicDisplayTimeout = null;
+let topicHideTimeout = null;
+function showRoundTopic(topic) {
+  const label = $("topic-label");
+  if (!label || !topic) return;
+  clearTimeout(topicDisplayTimeout);
+  clearTimeout(topicHideTimeout);
+  const selectedTopic = TOPICS.find(item => item.id === topic.id);
+  label.textContent = (state.language === "vi" ? "Chủ đề: " : "Topic: ") +
+    (selectedTopic ? selectedTopic[state.language] : topic.label);
+  label.hidden = false;
+  label.classList.remove("topic-fade-out");
+  void label.offsetWidth;
+  topicDisplayTimeout = setTimeout(() => {
+    label.classList.add("topic-fade-out");
+    topicHideTimeout = setTimeout(() => { label.hidden = true; }, 1100);
+  }, 5000);
+}
+
 
 const ALPHABETS = {
   vi: Array.from("aăâbcdđeêghiklmnoôơpqrstuưvxy"),
@@ -173,6 +192,7 @@ function generateRound() {
     ? state.dictionary[state.language]
     : FALLBACK_WORDS[state.language];
   state.topic = chooseTopic(state.language);
+  showRoundTopic(state.topic);
   const topicWords = new Set(state.topic.words.map(word => normalize(word).join("")));
   const candidates = selectCandidates(sourceWords.filter(word => topicWords.has(normalize(word).join(""))), state.difficulty);
 
@@ -336,7 +356,7 @@ function applyLanguage() {
   const vi = state.language === "vi";
   document.documentElement.lang = state.language;
   $("subtitle").textContent = vi ? "Tìm những từ ẩn!" : "Find the hidden words!";
-  if (state.topic) { const selectedTopic = TOPICS.find(topic => topic.id === state.topic.id); $("topic-label").textContent = (vi ? "Chủ đề: " : "Topic: ") + (selectedTopic ? selectedTopic[state.language] : state.topic.label); }
+  if (state.topic && !$("topic-label").hidden) showRoundTopic(state.topic);
   $("timer-label").textContent = vi ? "Thời gian" : "Time";
   $("score-label").textContent = vi ? "Điểm" : "Score";
   $("start-game").textContent = vi ? "Bắt đầu" : "Start Game";
