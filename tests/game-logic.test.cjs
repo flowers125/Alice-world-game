@@ -13,10 +13,10 @@ const sandbox = {
   clearInterval() {},
 };
 vm.runInNewContext(
-  source + "\nglobalThis.__gameTest = { state, scoreFor, normalize, ROWS, COLS, buildLetterWeights, buildValidWordSet, randomWeightedLetter, injectStarterWords };",
+  source + "\nglobalThis.__gameTest = { state, scoreFor, normalize, ROWS, COLS, buildLetterWeights, buildValidWordSet, normalizePhrase, randomWeightedLetter, injectStarterWords };",
   sandbox,
 );
-const { state, scoreFor, normalize, ROWS, COLS, buildLetterWeights, buildValidWordSet, randomWeightedLetter, injectStarterWords } = sandbox.__gameTest;
+const { state, scoreFor, normalize, normalizePhrase, ROWS, COLS, buildLetterWeights, buildValidWordSet, randomWeightedLetter, injectStarterWords } = sandbox.__gameTest;
 
 test("letter-length scoring matches the agreed table", () => {
   assert.deepEqual(
@@ -35,6 +35,7 @@ test("all three difficulty modes use the agreed word-length score table", () => 
 test("Vietnamese normalization uses NFC, lowercase, and removes spaces", () => {
   state.language = "vi";
   assert.equal(Array.from(normalize(" ĐIỆN thoại ")).join(""), "điệnthoại");
+  assert.equal(normalizePhrase(" ĐIỆN   thoại "), "điện thoại");
 });
 
 test("the board dimensions remain 15 by 20", () => {
@@ -44,13 +45,15 @@ test("the board dimensions remain 15 by 20", () => {
   assert.equal(board.flat().length, 300);
 });
 
-test("valid-word dictionary accepts single and multi-syllable entries without spaces", () => {
+test("valid-word dictionary requires explicit spaces between phrase words", () => {
   state.language = "vi";
   const valid = buildValidWordSet(["cá", "bình minh", "tình yêu", "bạn bè", "một ngày mới"]);
-  for (const word of ["cá", "bìnhminh", "tìnhyêu", "bạnbè", "mộtngàymới"]) {
+  for (const word of ["cá", "bình minh", "tình yêu", "bạn bè", "một ngày mới"]) {
     assert.equal(valid.has(word), true, "missing valid entry: " + word);
   }
-  assert.equal(valid.has("khongcotu"), false);
+  for (const word of ["bìnhminh", "tìnhyêu", "bạnbè", "mộtngàymới", "khongcotu"]) {
+    assert.equal(valid.has(word), false, "should require a space or be invalid: " + word);
+  }
 });
 
 test("letter weights are based on dictionary letter frequency", () => {
@@ -81,7 +84,7 @@ test("expanded Vietnamese dictionary contains common compounds and the word dolp
     .filter(Boolean);
   const valid = buildValidWordSet(dictionary);
   for (const word of ["cá heo", "táo xanh", "bình minh", "tình yêu", "bạn bè", "học sinh"]) {
-    assert.equal(valid.has(normalize(word).join("")), true, "missing Vietnamese entry: " + word);
+    assert.equal(valid.has(normalizePhrase(word)), true, "missing Vietnamese entry: " + word);
   }
   assert.ok(dictionary.length > 60000, "expanded dictionary should contain over 60,000 entries");
 });
