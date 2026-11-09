@@ -2,6 +2,7 @@
 
 const NORMAL_ROWS = 15;
 const NORMAL_COLS = 20;
+function boardSize() { return state.difficulty === "very-easy" ? { rows: 6, cols: 10 } : { rows: NORMAL_ROWS, cols: NORMAL_COLS }; }
 const MAX_WORD_LENGTH = 20;
 const ROUND_SECONDS = 180;
 
@@ -240,6 +241,7 @@ function generateRound() {
 
 function renderGrid() {
   const grid = $("game-grid");
+  grid.style.gridTemplateColumns = `repeat(${state.grid[0]?.length || 20}, minmax(0, 1fr))`;
   grid.innerHTML = "";
   state.grid.forEach((row, r) => row.forEach((letter, c) => {
     const cell = document.createElement("button");
