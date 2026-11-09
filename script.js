@@ -334,7 +334,7 @@ async function confirmSelectedWord() {
   renderWordBuilder();
   const word = selectedWordText(cells, breaks).normalize("NFC").toLocaleLowerCase(state.language);
   if (state.user && typeof window.handleWordSubmit === "function") {
-    await window.handleWordSubmit(cells);
+    await window.handleWordSubmit(cells, breaks, word);
   } else {
     localSubmitWordWithText(cells, word);
   }
