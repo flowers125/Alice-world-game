@@ -166,24 +166,6 @@ header p { font-size: 12px; }
 }
 
 
-.topic-label {
-  opacity: 1;
-  transform: translateY(0);
-  transition: opacity 1s ease, transform 1s ease;
-}
-.topic-label.topic-fade-out {
-  opacity: 0;
-  transform: translateY(-6px);
-  pointer-events: none;
-}
-@media (prefers-reduced-motion: reduce) {
-  .topic-label { transition-duration: .01ms; }
-}
-
-/* Ensure the topic stays hidden until a round starts. */
-.topic-label[hidden] { display: none !important; }
-
-
 /* Tap-to-build word controls */
 .word-builder-panel{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:9px 12px;margin:8px 0;border:1px solid rgba(117,98,156,.16);border-radius:10px;background:#faf8ff}
 #word-builder{flex:1;min-width:0;min-height:24px;font-size:clamp(15px,2vw,20px);font-weight:700;letter-spacing:.08em;overflow-wrap:anywhere}
