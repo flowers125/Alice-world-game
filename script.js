@@ -1,8 +1,7 @@
 "use strict";
 
-const NORMAL_ROWS = ROWS;
-const NORMAL_COLS = COLS;
-function boardSize() { return state.difficulty === "very-easy" ? { rows: 6, cols: 10 } : { rows: NORMAL_ROWS, cols: NORMAL_COLS }; }
+const NORMAL_ROWS = 15;
+const NORMAL_COLS = 20;
 const MAX_WORD_LENGTH = 20;
 const ROUND_SECONDS = 180;
 
