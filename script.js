@@ -333,7 +333,11 @@ async function confirmSelectedWord() {
   paintSelection();
   renderWordBuilder();
   const word = selectedWordText(cells, breaks).normalize("NFC").toLocaleLowerCase(state.language);
-  localSubmitWordWithText(cells, word);
+  if (state.user && typeof window.handleWordSubmit === "function") {
+    await window.handleWordSubmit(cells);
+  } else {
+    localSubmitWordWithText(cells, word);
+  }
 }
 
 function paintSelection() {
