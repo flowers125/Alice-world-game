@@ -83,6 +83,7 @@
       state.words=[];
       state.found.clear();
       state.selected=[];
+      state.wordBreaks=[];
       state.direction=null;
       const expiresAt=Date.parse(result.expires_at);
       state.seconds=Math.max(0,Math.ceil((expiresAt-Date.now())/1000));
@@ -156,6 +157,7 @@
       clearInterval(state.timer);
       state.running=false;
       state.selected=[];
+      state.wordBreaks=[];
       paintSelection();
       if(secureRound&&roundId){
         await claimQueue;
