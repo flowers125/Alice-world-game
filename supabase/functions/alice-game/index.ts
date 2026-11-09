@@ -100,52 +100,28 @@ Deno.serve(async (req: Request) => {
     if (action === "start") {
       const language = body.language === "en" ? "en" : "vi";
       const difficulty = body.difficulty === "very-hard" ? "very-hard" : body.difficulty === "very-easy" ? "very-easy" : "normal";
-      const topic = TOPICS[Math.floor(Math.random() * TOPICS.length)];
-      const {data:letterRows,error:letterError} = await admin.from("dictionary_words")
-        .select("normalized").eq("language",language).eq("is_active",true)
+      // Build the board from real active dictionary entries. The previous
+      // implementation filled every cell with random letters and scattered
+      // starter-word letters at unrelated positions, so players could not
+      // reliably form valid words and rounds ended with zero points.
+      const {data:dictionaryRows,error:dictionaryError} = await admin.from("dictionary_words")
+        .select("word,normalized").eq("language",language).eq("is_active",true)
         .not("normalized","ilike","% %").limit(5000);
-      if (letterError) throw letterError;
-      const counts = new Map<string,number>();
-      for (const item of (letterRows || []) as any[]) {
-        for (const letter of Array.from(normalize(item.normalized))) {
-          counts.set(letter,(counts.get(letter)||0)+1);
-        }
-      }
-      const weighted = [...counts.entries()];
-      const fallback = language === "vi"
-        ? Array.from("aăâbcdđeêghiklmnoôơpqrstuưvxyáàảãạắằẳẵặấầẩẫậéèẻẽẹếềểễệíìỉĩịóòỏõọốồổỗộớờởỡợúùủụứừửựýỳỷỹỵ")
-        : Array.from("abcdefghijklmnopqrstuvwxyz");
-      const pickLetter = () => {
-        if (!weighted.length) return fallback[Math.floor(Math.random()*fallback.length)];
-        const total = weighted.reduce((sum,item)=>sum+item[1],0);
-        let pick = Math.random()*total;
-        for (const [letter,weight] of weighted) {
-          pick -= weight;
-          if (pick <= 0) return letter;
-        }
-        return weighted[weighted.length-1][0];
-      };
-      const board = Array.from({length:15},()=>Array.from({length:20},()=>pickLetter()));
-      const starterWords = language === "vi"
-        ? ["cá","cơm","đèn","thuyền","hoa","lá","sữa","nhà"]
-        : ["say","no","yes"];
-      const used = new Set<number>();
-      for (const word of starterWords) {
-        for (const letter of Array.from(normalize(word))) {
-          let index = Math.floor(Math.random()*300);
-          while (used.has(index)) index = Math.floor(Math.random()*300);
-          used.add(index);
-          board[Math.floor(index/20)][index%20] = letter;
-        }
-      }
+      if (dictionaryError) throw dictionaryError;
+      if (!dictionaryRows?.length) throw new Error("No active dictionary words for selected language");
+      const {board,placed} = makeBoard(
+        dictionaryRows as {word:string;normalized:string}[],
+        language,
+        difficulty
+      );
       const started = new Date();
       const expires = new Date(started.getTime()+180000);
       const {data:round,error:roundError} = await admin.from("game_rounds").insert({
-        user_id:user.id, language,difficulty,board,target_words:[],
+        user_id:user.id, language,difficulty,board,target_words:placed,
         started_at:started.toISOString(),expires_at:expires.toISOString()
       }).select("id,started_at,expires_at").single();
       if (roundError) throw roundError;
-      return reply({round_id:round.id,board,topic:{id:topic.id,label:topic[language]},started_at:round.started_at,expires_at:round.expires_at,seconds:180});
+      return reply({round_id:round.id,board,started_at:round.started_at,expires_at:round.expires_at,seconds:180});
     }
 
     if (action === "claim") {
