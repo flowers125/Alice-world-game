@@ -13,10 +13,10 @@ const sandbox = {
   clearInterval() {},
 };
 vm.runInNewContext(
-  source + "\nglobalThis.__gameTest = { state, scoreFor, normalize, ROWS, COLS, buildLetterWeights, randomWeightedLetter, injectStarterWords };",
+  source + "\nglobalThis.__gameTest = { state, scoreFor, normalize, ROWS, COLS, buildLetterWeights, buildValidWordSet, randomWeightedLetter, injectStarterWords };",
   sandbox,
 );
-const { state, scoreFor, normalize, ROWS, COLS, buildLetterWeights, randomWeightedLetter, injectStarterWords } = sandbox.__gameTest;
+const { state, scoreFor, normalize, ROWS, COLS, buildLetterWeights, buildValidWordSet, randomWeightedLetter, injectStarterWords } = sandbox.__gameTest;
 
 test("letter-length scoring matches the agreed table", () => {
   assert.deepEqual(
@@ -42,6 +42,15 @@ test("the board dimensions remain 15 by 20", () => {
   assert.equal(COLS, 20);
   const board = Array.from({ length: ROWS }, () => Array(COLS).fill("x"));
   assert.equal(board.flat().length, 300);
+});
+
+test("valid-word dictionary accepts single and multi-syllable entries without spaces", () => {
+  state.language = "vi";
+  const valid = buildValidWordSet(["cá", "bình minh", "tình yêu", "bạn bè", "một ngày mới"]);
+  for (const word of ["cá", "bìnhminh", "tìnhyêu", "bạnbè", "mộtngàymới"]) {
+    assert.equal(valid.has(word), true, "missing valid entry: " + word);
+  }
+  assert.equal(valid.has("khongcotu"), false);
 });
 
 test("letter weights are based on dictionary letter frequency", () => {
