@@ -11,57 +11,6 @@ const FALLBACK_WORDS = {
 };
 const DICTIONARY_URLS = { vi: "dictionaries/vi.txt", en: "dictionaries/en.txt" };
 
-const TOPICS = [
-  { id:"fruit", vi:"Hoa quả", en:"Fruits", words:{
-    vi:["táo","cam","chuối","xoài","lê","ổi","mít","dừa","nho","đào","dưa","mận"],
-    en:["apple","banana","orange","mango","pear","grape","lemon","peach","fruit","melon","berry","plum"]}},
-  { id:"ocean", vi:"Đại dương", en:"Ocean", words:{
-    vi:["biển","cá","tôm","cua","sò","sóng","nước","thuyền","cá voi","san hô","ốc","mực"],
-    en:["ocean","sea","fish","crab","wave","water","ship","whale","shark","coral","shell","squid"]}},
-  { id:"cooking", vi:"Nấu ăn", en:"Cooking", words:{
-    vi:["cơm","canh","thịt","trứng","bánh","sữa","muối","đường","dầu","bếp","nồi","chảo","rau","mì"],
-    en:["rice","soup","meat","egg","bread","milk","salt","sugar","oil","kitchen","pot","pan","food","cook"]}},
-  { id:"colors", vi:"Màu sắc", en:"Colors", words:{
-    vi:["đỏ","xanh","tím","vàng","đen","trắng","hồng","nâu","xám","cam"],
-    en:["red","blue","purple","yellow","black","white","pink","brown","gray","green","orange"]}},
-  { id:"animals", vi:"Động vật", en:"Animals", words:{
-    vi:["mèo","chó","voi","hổ","gấu","thỏ","chim","dê","bò","cá","ngựa","sư tử"],
-    en:["cat","dog","elephant","tiger","bear","rabbit","bird","goat","cow","fish","horse","lion"]}},
-  { id:"nature", vi:"Thiên nhiên", en:"Nature", words:{
-    vi:["hoa","lá","cây","núi","sông","mưa","gió","mây","trăng","sao","đất","cỏ"],
-    en:["flower","leaf","tree","mountain","river","rain","wind","cloud","moon","star","earth","grass"]}},
-  { id:"school", vi:"Trường học", en:"School", words:{
-    vi:["sách","bút","vở","bàn","ghế","lớp","thầy","cô","học","bảng","giấy","mực"],
-    en:["book","pen","notebook","desk","chair","class","teacher","school","study","board","paper","ink"]}},
-  { id:"names", vi:"Tên người", en:"Names", words:{
-    vi:["an","bình","lan","mai","nam","minh","linh","hoa","hùng","ngọc","phúc","vy"],
-    en:["alice","anna","ben","david","emma","jack","james","leo","lily","lucy","mia","noah"]}}
-];
-function chooseTopic(language) {
-  const topic = TOPICS[Math.floor(Math.random()*TOPICS.length)];
-  return {id:topic.id,label:topic[language],words:topic.words[language]};
-}
-
-let topicDisplayTimeout = null;
-let topicHideTimeout = null;
-function showRoundTopic(topic) {
-  const label = $("topic-label");
-  if (!label || !topic) return;
-  clearTimeout(topicDisplayTimeout);
-  clearTimeout(topicHideTimeout);
-  const selectedTopic = TOPICS.find(item => item.id === topic.id);
-  label.textContent = (state.language === "vi" ? "Chủ đề: " : "Topic: ") +
-    (selectedTopic ? selectedTopic[state.language] : topic.label);
-  label.hidden = false;
-  label.classList.remove("topic-fade-out");
-  void label.offsetWidth;
-  topicDisplayTimeout = setTimeout(() => {
-    label.classList.add("topic-fade-out");
-    topicHideTimeout = setTimeout(() => { label.hidden = true; }, 1100);
-  }, 5000);
-}
-
-
 const ALPHABETS = {
   vi: Array.from("aăâbcdđeêghiklmnoôơpqrstuưvxyáàảãạắằẳẵặấầẩẫậéèẻẽẹếềểễệíìỉĩịóòỏõọốồổỗộớờởỡợúùủụứừửựýỳỷỹỵ"),
   en: Array.from("abcdefghijklmnopqrstuvwxyz")
@@ -81,7 +30,6 @@ const state = {
   difficulty: "normal",
   grid: [],
   words: [],
-  topic: null,
   dictionary: { vi: [], en: [] },
   dictionaryReady: false,
   validWords: new Set(),
@@ -237,8 +185,6 @@ function generateRound() {
   state.seconds = ROUND_SECONDS;
   state.score = 0;
 
-  state.topic = chooseTopic(state.language);
-  showRoundTopic(state.topic);
   state.words = [];
   const alphabet = ALPHABETS[state.language];
   for (let r = 0; r < ROWS; r++) {
@@ -386,7 +332,6 @@ function applyLanguage() {
   const vi = state.language === "vi";
   document.documentElement.lang = state.language;
   $("subtitle").textContent = vi ? "Tìm những từ ẩn!" : "Find the hidden words!";
-  if (state.topic && !$("topic-label").hidden) showRoundTopic(state.topic);
   $("timer-label").textContent = vi ? "Thời gian" : "Time";
   $("confirm-word").textContent = "OK";
   $("clear-word").textContent = vi ? "Xóa chọn" : "Clear";
