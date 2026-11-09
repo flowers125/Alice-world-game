@@ -134,7 +134,11 @@
       const result=await callGame("claim",{round_id:targetRoundId,cells,breaks});
       if(roundId!==targetRoundId)return;
       if(!result.valid){
-        $ui("game-message").textContent=state.language==="vi"?"Từ không hợp lệ hoặc đã được tính.":"Invalid or already-counted word.";
+        const reason=result.reason||"not_a_dictionary_word";
+        const messages=state.language==="vi"
+          ? {not_a_dictionary_word:"Cụm từ chưa có trong từ điển.",already_found:"Từ này đã được tính điểm.",cell_already_used:"Có ô chữ đã được sử dụng.",invalid_length:"Độ dài từ không hợp lệ."}
+          : {not_a_dictionary_word:"This entry is not in the dictionary.",already_found:"This word was already scored.",cell_already_used:"A selected cell was already used.",invalid_length:"Invalid word length."};
+        $ui("game-message").textContent=messages[reason]||"Không thể tính điểm từ này.";
         playTone(190);
         return;
       }
