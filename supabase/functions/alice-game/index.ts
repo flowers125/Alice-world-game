@@ -32,10 +32,11 @@ function placeWord(board: string[][], word: string) {
   const letters = Array.from(normalize(word));
   if (!letters.length || letters.length > 20) return false;
   for (const [dr, dc] of dirs) {
-    for (const [r,c] of shuffle(Array.from({length:300},(_,i)=>[Math.floor(i/20),i%20]))) {
+    const rows = board.length, cols = board[0].length;
+    for (const [r,c] of shuffle(Array.from({length:rows*cols},(_,i)=>[Math.floor(i/cols),i%cols]))) {
       const er = r + dr * (letters.length - 1);
       const ec = c + dc * (letters.length - 1);
-      if (er < 0 || er >= 15 || ec < 0 || ec >= 20) continue;
+      if (er < 0 || er >= rows || ec < 0 || ec >= cols) continue;
       let fits = true;
       for (let i=0;i<letters.length;i++) {
         const existing = board[r+dr*i][c+dc*i];
@@ -60,7 +61,9 @@ const TOPICS = [
 ];
 
 function makeBoard(words: {word:string;normalized:string}[], language: string, difficulty: string) {
-  const board = Array.from({length:15},()=>Array(20).fill(""));
+  const rows = difficulty === "very-easy" ? 6 : 15;
+  const cols = difficulty === "very-easy" ? 10 : 20;
+  const board = Array.from({length:rows},()=>Array(cols).fill(""));
   const placed: string[] = [];
   const targetLimit = Math.min(difficulty === "very-hard" ? 42 : 36, words.length);
   const eligible = shuffle(words.filter(item => {
@@ -74,7 +77,7 @@ function makeBoard(words: {word:string;normalized:string}[], language: string, d
   const alphabet = language === "vi"
     ? Array.from("aăâbcdđeêghiklmnoôơpqrstuưvxyáàảãạắằẳẵặấầẩẫậéèẻẽẹếềểễệíìỉĩịóòỏõọốồổỗộớờởỡợúùủụứừửữựýỳỷỹỵ")
     : Array.from("abcdefghijklmnopqrstuvwxyz");
-  for (let r=0;r<15;r++) for (let c=0;c<20;c++) {
+  for (let r=0;r<rows;r++) for (let c=0;c<cols;c++) {
     if (!board[r][c]) board[r][c]=alphabet[Math.floor(Math.random()*alphabet.length)];
   }
   return {board,placed};
