@@ -387,7 +387,7 @@ function applyLanguage() {
   $("difficulty").options[2].textContent = vi ? "Rất khó" : "Very Hard";
   $("help-title").textContent = vi ? "Cách chơi" : "How to play";
   $("help-copy").textContent = vi
-    ? "Click lần lượt từng chữ cái bất kỳ để ghép thành từ có nghĩa, sau đó nhấn OK hoặc Enter. Từ hợp lệ sẽ được tính điểm và các chữ đã dùng biến mất, ô trống không sinh chữ mới. Bạn có 180 giây!"
+    ? "Click lần lượt từng chữ cái bất kỳ để ghép thành từ có nghĩa. Nếu là cụm từ nhiều tiếng, nhấn Dấu cách giữa các tiếng, sau đó nhấn OK hoặc Enter. Từ hợp lệ sẽ được tính điểm và các chữ đã dùng biến mất, ô trống không sinh chữ mới. Bạn có 180 giây!"
     : "Tap letters in any order to build a meaningful word, then press OK or Enter. Valid words score points and their cells disappear. Empty cells stay empty. You have 180 seconds!";
   $("close-help").textContent = vi ? "Đã hiểu" : "Got it";
   $("google-sign-in").textContent = vi ? "Đăng nhập Google" : "Sign in with Google";
