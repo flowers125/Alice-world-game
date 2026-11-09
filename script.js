@@ -61,7 +61,7 @@ const normalize = word => Array.from(
 
 function normalizePhrase(word) {
   return word.normalize("NFC").toLocaleLowerCase(state.language)
-    .trim().replace(/\\s+/gu, " ");
+    .trim().replace(/\s+/gu, " ");
 }
 
 function buildValidWordSet(words) {
