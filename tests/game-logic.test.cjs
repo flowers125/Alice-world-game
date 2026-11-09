@@ -80,7 +80,7 @@ test("expanded Vietnamese dictionary contains common compounds and the word dolp
     .map(word => word.trim().normalize("NFC"))
     .filter(Boolean);
   const valid = buildValidWordSet(dictionary);
-  for (const word of ["cá heo", "bình minh", "tình yêu", "bạn bè", "học sinh"]) {
+  for (const word of ["cá heo", "táo xanh", "bình minh", "tình yêu", "bạn bè", "học sinh"]) {
     assert.equal(valid.has(normalize(word).join("")), true, "missing Vietnamese entry: " + word);
   }
   assert.ok(dictionary.length > 60000, "expanded dictionary should contain over 60,000 entries");
