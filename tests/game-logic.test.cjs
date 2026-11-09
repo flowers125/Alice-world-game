@@ -76,7 +76,7 @@ test("starter words are seeded into the 300-cell Vietnamese board", () => {
 
 test("expanded Vietnamese dictionary contains common compounds and the word dolphin", () => {
   const dictionary = fs.readFileSync("dictionaries/vi.txt", "utf8")
-    .split(/\\r?\\n/)
+    .split(/\r?\n/)
     .map(word => word.trim().normalize("NFC"))
     .filter(Boolean);
   const valid = buildValidWordSet(dictionary);
