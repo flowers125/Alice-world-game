@@ -114,30 +114,31 @@
     return localGenerateRound();
   };
 
-  window.handleWordSubmit = async function(cells){
+  window.handleWordSubmit = async function(cells,breaks=[],word=""){
     if(!secureRound){
-      localSubmitWord(cells);
+      localSubmitWordWithText(cells,word || selectedWordText(cells,breaks));
       return;
     }
     if(!roundId || cells.length < 2) return;
     const payload=cells.map(({row,col})=>({r:row,c:col}));
     const selectedRoundId=roundId;
-    claimQueue=claimQueue.then(()=>claimSecureWord(payload,selectedRoundId));
+    const wordBreaks=Array.isArray(breaks)?breaks:[];
+    claimQueue=claimQueue.then(()=>claimSecureWord(payload,selectedRoundId,wordBreaks));
     await claimQueue;
     if(state.running && state.grid.every(row=>row.every(letter=>!letter))) await finishRound();
   };
 
-  async function claimSecureWord(cells,targetRoundId){
+  async function claimSecureWord(cells,targetRoundId,breaks=[]){
     if(!targetRoundId)return;
     try{
-      const result=await callGame("claim",{round_id:targetRoundId,cells});
+      const result=await callGame("claim",{round_id:targetRoundId,cells,breaks});
       if(roundId!==targetRoundId)return;
       if(!result.valid){
         $ui("game-message").textContent=state.language==="vi"?"Từ không hợp lệ hoặc đã được tính.":"Invalid or already-counted word.";
         playTone(190);
         return;
       }
-      state.found.add(result.word.normalize("NFC").toLocaleLowerCase(state.language).replace(/\\s+/g,""));
+      state.found.add((result.normalized || result.word).normalize("NFC").toLocaleLowerCase(state.language).trim().replace(/\s+/gu," "));
       cells.forEach(p=>{state.grid[p.r][p.c]="";});
       state.score=result.score;
       renderGrid();
