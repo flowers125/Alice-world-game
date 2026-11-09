@@ -17983,6 +17983,7 @@ dong măk
 dong nhan
 dòng quét
 dong riềng
+dòng sông
 dòng tên
 dòng thăm
 dòng thuần
@@ -37084,6 +37085,8 @@ màu da
 màu dầu
 máu dê
 máu đâu trâu đó
+màu đen
+màu đỏ
 màu đơn sắc
 máu gà
 máu gà tẩm xương gà
@@ -37126,7 +37129,11 @@ mau tay
 mau tay hay làm
 máu tham
 máu thịt
+màu tím
+màu trắng
 máu trắng
+màu vàng
+màu xanh
 máu xương
 may
 mày
@@ -38976,6 +38983,7 @@ mú
 mụ
 mũ áo
 mũ áo cân đai
+mũ bảo hiểm
 mũ biên phòng
 mũ bình thiên
 mũ bịt đầu
@@ -47674,6 +47682,7 @@ phơ
 phờ
 phở
 phở áp chảo
+phở bò
 phở nạm
 phở nước
 phờ phạc
@@ -50835,6 +50844,7 @@ rua
 rùa
 rủa
 rũa
+rùa biển
 rùa hôi
 rủa mát
 rùa mốc
@@ -54230,6 +54240,7 @@ tạo thiên lập địa
 táo tợn
 tảo trừ
 tạo vật
+táo xanh
 táp
 tạp
 tạp ăn
@@ -55263,6 +55274,7 @@ thác loạn
 thác mã
 thác mơ
 thạc nam
+thác nước
 thạc sĩ
 thác sinh
 thách
@@ -61391,6 +61403,7 @@ trà dơn
 trà dư tửu hậu
 trà dương
 trà đa
+trà đá
 trà đốc
 trà đông
 trả đũa
