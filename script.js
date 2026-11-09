@@ -110,6 +110,12 @@ const normalize = word => Array.from(
   word.normalize("NFC").toLocaleLowerCase(state.language).replace(/\s+/g, "")
 );
 
+function buildValidWordSet(words) {
+  return new Set(words
+    .map(word => normalize(word).join(""))
+    .filter(word => Array.from(word).length >= 2));
+}
+
 function buildLetterWeights(words) {
   const counts = new Map();
   for (const raw of words) {
@@ -430,10 +436,7 @@ function applyLanguage() {
 function changeLanguage(value) {
   if (!["vi","en"].includes(value)) return;
   state.language = value;
-  state.validWords = new Set(state.dictionary[state.language]
-    .filter(word => !/\s/u.test(word.trim()))
-    .map(word => normalize(word).join(""))
-    .filter(word => Array.from(word).length >= 2));
+  state.validWords = buildValidWordSet(state.dictionary[state.language]);
   applyLanguage();
   if (state.running) generateRound();
   else $("game-message").textContent = "";
@@ -458,10 +461,7 @@ async function loadDictionaries() {
     state.dictionary[language] = words;
     state.letterWeights[language] = buildLetterWeights(words);
   });
-  state.validWords = new Set(state.dictionary[state.language]
-    .filter(word => !/\s/u.test(word.trim()))
-    .map(word => normalize(word).join(""))
-    .filter(word => Array.from(word).length >= 2));
+  state.validWords = buildValidWordSet(state.dictionary[state.language]);
   state.dictionaryReady = true;
   $("start-game").disabled = state.backendReady === false;
   $("game-message").textContent = "";
