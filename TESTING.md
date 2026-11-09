@@ -42,3 +42,12 @@ Very Hard mode:
 - Configure Google OAuth in Supabase.
 - Add the deployed site's URL to Supabase Auth redirect URLs.
 - Use the Cloudflare Pages settings documented in `README.md`.
+
+
+## Personal-best persistence
+- [ ] A guest can play, but their score is never submitted or saved online.
+- [ ] A Google-signed-in user can submit valid words and the server returns the authoritative score.
+- [ ] At round completion, the score is saved only if it exceeds that account's existing personal best for the same language and difficulty.
+- [ ] A lower-scoring round does not replace the existing personal best.
+- [ ] A non-Google Supabase session is rejected by the game Edge Function.
+- [ ] The leaderboard displays each account's best score, never a sum of rounds.
