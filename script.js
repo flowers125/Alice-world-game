@@ -1,7 +1,8 @@
 "use strict";
 
-const ROWS = 15;
-const COLS = 20;
+const NORMAL_ROWS = 15;
+const NORMAL_COLS = 20;
+function boardSize() { return state.difficulty === "very-easy" ? { rows: 6, cols: 10 } : { rows: NORMAL_ROWS, cols: NORMAL_COLS }; }
 const MAX_WORD_LENGTH = 20;
 const ROUND_SECONDS = 180;
 
@@ -116,10 +117,11 @@ function injectStarterWords(language) {
   const used = new Set();
   for (const word of starterWords) {
     for (const letter of Array.from(word.normalize("NFC"))) {
+      const {rows, cols} = boardSize();
       let index;
-      do { index = Math.floor(Math.random() * ROWS * COLS); } while (used.has(index));
+      do { index = Math.floor(Math.random() * rows * cols); } while (used.has(index));
       used.add(index);
-      state.grid[Math.floor(index / COLS)][index % COLS] = letter;
+      state.grid[Math.floor(index / cols)][index % cols] = letter;
     }
   }
 }
@@ -138,7 +140,7 @@ function scoreFor(length) {
 function canPlace(grid, letters, row, col, dr, dc) {
   for (let i = 0; i < letters.length; i++) {
     const r = row + dr * i, c = col + dc * i;
-    if (r < 0 || r >= ROWS || c < 0 || c >= COLS) return false;
+    if (r < 0 || r >= grid.length || c < 0 || c >= grid[0].length) return false;
     if (grid[r][c] && grid[r][c] !== letters[i]) return false;
   }
   return true;
@@ -146,8 +148,8 @@ function canPlace(grid, letters, row, col, dr, dc) {
 
 function placeWord(grid, letters) {
   const starts = [];
-  for (let r = 0; r < ROWS; r++) {
-    for (let c = 0; c < COLS; c++) {
+  for (let r = 0; r < grid.length; r++) {
+    for (let c = 0; c < grid[0].length; c++) {
       for (const [dr, dc] of DIRECTIONS) starts.push([r,c,dr,dc]);
     }
   }
@@ -201,7 +203,8 @@ function selectCandidates(sourceWords, difficulty) {
 
 function generateRound() {
   clearInterval(state.timer);
-  state.grid = Array.from({length:ROWS}, () => Array(COLS).fill(""));
+  const {rows, cols} = boardSize();
+  state.grid = Array.from({length:rows}, () => Array(cols).fill(""));
   state.found.clear();
   state.selected = [];
   state.wordBreaks = [];
@@ -211,8 +214,8 @@ function generateRound() {
 
   state.words = [];
   const alphabet = ALPHABETS[state.language];
-  for (let r = 0; r < ROWS; r++) {
-    for (let c = 0; c < COLS; c++) {
+  for (let r = 0; r < rows; r++) {
+    for (let c = 0; c < cols; c++) {
       state.grid[r][c] = randomWeightedLetter(state.letterWeights[state.language], alphabet);
     }
   }
