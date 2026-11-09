@@ -36,6 +36,7 @@ const state = {
   letterWeights: {vi: [], en: []},
   found: new Set(),
   selected: [],
+  wordBreaks: [],
   running: false,
   seconds: ROUND_SECONDS,
   score: 0,
@@ -58,10 +59,32 @@ const normalize = word => Array.from(
   word.normalize("NFC").toLocaleLowerCase(state.language).replace(/\s+/g, "")
 );
 
+function normalizePhrase(word) {
+  return word.normalize("NFC").toLocaleLowerCase(state.language)
+    .trim().replace(/\\s+/gu, " ");
+}
+
 function buildValidWordSet(words) {
   return new Set(words
-    .map(word => normalize(word).join(""))
-    .filter(word => Array.from(word).length >= 2));
+    .map(normalizePhrase)
+    .filter(word => Array.from(word.replace(/\\s/gu, "")).length >= 2));
+}
+
+function selectedWordText(cells, breaks = []) {
+  let result = "";
+  cells.forEach(({row,col}, index) => {
+    if (breaks.includes(index)) result += " ";
+    result += state.grid[row][col];
+  });
+  return result;
+}
+
+function insertWordSpace() {
+  if (!state.running || !state.selected.length) return;
+  const boundary = state.selected.length;
+  if (state.wordBreaks.includes(boundary)) return;
+  state.wordBreaks.push(boundary);
+  renderWordBuilder();
 }
 
 function buildLetterWeights(words) {
@@ -181,6 +204,7 @@ function generateRound() {
   state.grid = Array.from({length:ROWS}, () => Array(COLS).fill(""));
   state.found.clear();
   state.selected = [];
+  state.wordBreaks = [];
   state.direction = null;
   state.seconds = ROUND_SECONDS;
   state.score = 0;
@@ -230,8 +254,12 @@ function renderGrid() {
       if (!state.running || cell.disabled) return;
       const position = {row:r,col:c};
       const existing = state.selected.findIndex(p => p.row === r && p.col === c);
-      if (existing >= 0) state.selected.splice(existing, 1);
-      else state.selected.push(position);
+      if (existing >= 0) {
+        state.selected.splice(existing, 1);
+        state.wordBreaks = state.wordBreaks
+          .filter(boundary => boundary !== existing)
+          .map(boundary => boundary > existing ? boundary - 1 : boundary);
+      } else state.selected.push(position);
       paintSelection();
       renderWordBuilder();
     });
@@ -250,23 +278,29 @@ function updateHUD() {
 }
 
 function renderWordBuilder() {
-  const word = state.selected.map(({row,col}) => state.grid[row][col]).join("").toLocaleUpperCase(state.language);
+  const word = selectedWordText(state.selected, state.wordBreaks).toLocaleUpperCase(state.language);
   $("word-builder").textContent = word || (state.language === "vi" ? "Chọn chữ cái để ghép từ" : "Tap letters to build a word");
   $("confirm-word").disabled = !state.running || state.selected.length < 2;
   $("clear-word").disabled = !state.selected.length;
+  $("insert-space").disabled = !state.running || !state.selected.length || state.wordBreaks.includes(state.selected.length);
 }
 
 function clearWordSelection() {
   state.selected = [];
+  state.wordBreaks = [];
   paintSelection();
   renderWordBuilder();
 }
 
 function localSubmitWord(cells) {
+  const word = selectedWordText(cells, state.wordBreaks).normalize("NFC").toLocaleLowerCase(state.language);
+  localSubmitWordWithText(cells, word);
+}
+
+function localSubmitWordWithText(cells, word) {
   if (!state.running || cells.length < 2) return;
-  const word = cells.map(({row,col}) => state.grid[row][col]).join("").normalize("NFC").toLocaleLowerCase(state.language);
-  const key = normalize(word).join("");
-  const length = Array.from(word).length;
+  const key = normalizePhrase(word);
+  const length = Array.from(word.replace(/\\s/gu, "")).length;
   if (length < 2 || !state.validWords.has(key) || state.found.has(key)) {
     $("game-message").textContent = state.language === "vi" ? "Từ không hợp lệ, thử ghép từ khác nhé!" : "Not a valid word. Try another!";
     playTone(190);
@@ -287,8 +321,13 @@ window.handleWordSubmit = async cells => localSubmitWord(cells);
 async function confirmSelectedWord() {
   if (!state.running || state.selected.length < 2) return;
   const cells = state.selected.slice();
-  clearWordSelection();
-  await window.handleWordSubmit(cells);
+  const breaks = state.wordBreaks.slice();
+  state.selected = [];
+  state.wordBreaks = [];
+  paintSelection();
+  renderWordBuilder();
+  const word = selectedWordText(cells, breaks).normalize("NFC").toLocaleLowerCase(state.language);
+  localSubmitWordWithText(cells, word);
 }
 
 function paintSelection() {
@@ -303,6 +342,7 @@ function finishRound() {
   clearInterval(state.timer);
   state.running = false;
   state.selected = [];
+  state.wordBreaks = [];
   paintSelection();
   renderWordBuilder();
   $("game-message").textContent = state.language === "vi"
@@ -335,6 +375,7 @@ function applyLanguage() {
   $("timer-label").textContent = vi ? "Thời gian" : "Time";
   $("confirm-word").textContent = "OK";
   $("clear-word").textContent = vi ? "Xóa chọn" : "Clear";
+  $("insert-space").textContent = vi ? "Dấu cách" : "Space";
   $("score-label").textContent = vi ? "Điểm" : "Score";
   $("start-game").textContent = vi ? "Bắt đầu" : "Start Game";
   $("help-button").textContent = vi ? "Cách chơi" : "How to play";
@@ -451,6 +492,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
   $("confirm-word").addEventListener("click", confirmSelectedWord);
   $("clear-word").addEventListener("click", clearWordSelection);
+  $("insert-space").addEventListener("click", insertWordSpace);
   document.addEventListener("keydown", e => {
     if (e.key === "Enter" && state.running && state.selected.length >= 2) {
       e.preventDefault();
