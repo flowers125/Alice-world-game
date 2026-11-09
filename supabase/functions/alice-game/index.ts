@@ -19,6 +19,9 @@ const admin = createClient(url, serviceKey, { auth: { persistSession: false } })
 function normalize(value: string) {
   return value.normalize("NFC").toLocaleLowerCase().replace(/[\s\u200B-\u200D]+/gu, "");
 }
+function normalizePhrase(value: string) {
+  return value.normalize("NFC").toLocaleLowerCase().trim().replace(/[\s\u200B-\u200D]+/gu, " ");
+}
 function shuffle<T>(items: T[]) {
   const a = [...items];
   for (let i = a.length - 1; i > 0; i--) {
@@ -104,9 +107,9 @@ Deno.serve(async (req: Request) => {
       // implementation filled every cell with random letters and scattered
       // starter-word letters at unrelated positions, so players could not
       // reliably form valid words and rounds ended with zero points.
-      const {data:dictionaryRows,error:dictionaryError} = await admin.from("dictionary_words")
-        .select("word,normalized").eq("language",language).eq("is_active",true)
-        .not("normalized","ilike","% %").limit(5000);
+      const {data:dictionaryRows,error:dictionaryError} = await admin.rpc("alice_random_dictionary_words",{
+        p_language:language,p_limit:5000
+      });
       if (dictionaryError) throw dictionaryError;
       if (!dictionaryRows?.length) throw new Error("No active dictionary words for selected language");
       const {board,placed} = makeBoard(
@@ -144,22 +147,31 @@ Deno.serve(async (req: Request) => {
         if (!round.board?.[p.r]?.[p.c]) return reply({valid:false,reason:"cell_already_used"},200);
       }
 
-      const formed = normalize(path.map((p:any)=>round.board[p.r][p.c]).join(""));
+      const rawBreaks = Array.isArray(body.breaks) ? body.breaks : [];
+      const breaks = rawBreaks.map((value:any)=>Number(value));
+      if (breaks.some((value:number)=>!Number.isInteger(value)||value<1||value>=path.length) ||
+          new Set(breaks).size !== breaks.length) return reply({error:"Invalid word spacing"},400);
+      const breakSet = new Set<number>(breaks);
+      const formedPhrase = path.map((p:any,index:number)=>
+        (breakSet.has(index) ? " " : "") + round.board[p.r][p.c]
+      ).join("");
+      const normalizedPhrase = normalizePhrase(formedPhrase);
+      const formed = normalize(normalizedPhrase);
       const length = Array.from(formed).length;
       if (length < 2 || length > 20) return reply({valid:false,reason:"invalid_length"},200);
       const {data:dictionaryWord,error:dictionaryError} = await admin.from("dictionary_words")
         .select("word,normalized").eq("language",round.language).eq("is_active",true)
-        .eq("normalized",formed).maybeSingle();
+        .eq("normalized",normalizedPhrase).maybeSingle();
       if (dictionaryError) throw dictionaryError;
       if (!dictionaryWord) return reply({valid:false,reason:"not_a_dictionary_word"},200);
 
       const points = length===2 ? 1 : length===3 ? 2 : length===4 ? 3 : length===5 ? 7 : length===6 ? 8 : length===7 ? 9 : length===8 ? 11 : 15;
       const {data:record,error:recordError} = await admin.rpc("alice_record_word",{
-        p_round_id:roundId,p_user_id:user.id,p_normalized:formed,p_points:points,p_cells:path
+        p_round_id:roundId,p_user_id:user.id,p_normalized:normalizedPhrase,p_points:points,p_cells:path
       });
-      if(recordError) throw recordError;
-      if(!record?.ok) return reply({valid:false,reason:record?.reason||"already_found"},200);
-      return reply({valid:true,word:dictionaryWord.word,points,score:record.score});
+      if (recordError) throw recordError;
+      if (!record?.ok) return reply({valid:false,reason:record?.reason||"already_found"},200);
+      return reply({valid:true,word:dictionaryWord.word,normalized:dictionaryWord.normalized,points,score:record.score});
     }
 
     if (action === "finish") {
