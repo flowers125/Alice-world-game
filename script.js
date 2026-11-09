@@ -67,7 +67,7 @@ function normalizePhrase(word) {
 function buildValidWordSet(words) {
   return new Set(words
     .map(normalizePhrase)
-    .filter(word => Array.from(word.replace(/\\s/gu, "")).length >= 2));
+    .filter(word => Array.from(word.replace(/\s/gu, "")).length >= 2));
 }
 
 function selectedWordText(cells, breaks = []) {
@@ -300,7 +300,7 @@ function localSubmitWord(cells) {
 function localSubmitWordWithText(cells, word) {
   if (!state.running || cells.length < 2) return;
   const key = normalizePhrase(word);
-  const length = Array.from(word.replace(/\\s/gu, "")).length;
+  const length = Array.from(word.replace(/\s/gu, "")).length;
   if (length < 2 || !state.validWords.has(key) || state.found.has(key)) {
     $("game-message").textContent = state.language === "vi" ? "Từ không hợp lệ, thử ghép từ khác nhé!" : "Not a valid word. Try another!";
     playTone(190);
