@@ -72,3 +72,21 @@ test("starter words are seeded into the 300-cell Vietnamese board", () => {
     }
   }
 });
+
+
+test("expanded Vietnamese dictionary contains common compounds and the word dolphin", () => {
+  const dictionary = fs.readFileSync("dictionaries/vi.txt", "utf8")
+    .split(/\\r?\\n/)
+    .map(word => word.trim().normalize("NFC"))
+    .filter(Boolean);
+  const valid = buildValidWordSet(dictionary);
+  for (const word of ["cá heo", "bình minh", "tình yêu", "bạn bè", "học sinh"]) {
+    assert.equal(valid.has(normalize(word).join("")), true, "missing Vietnamese entry: " + word);
+  }
+  assert.ok(dictionary.length > 60000, "expanded dictionary should contain over 60,000 entries");
+});
+
+test("round generation no longer contains topic restrictions or topic UI", () => {
+  assert.equal(source.includes("const TOPICS"), false);
+  assert.equal(source.includes("showRoundTopic"), false);
+});
