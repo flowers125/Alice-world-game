@@ -80,8 +80,6 @@
       roundId=result.round_id;
       secureRound=true;
       state.grid=result.board;
-      state.topic=result.topic || null;
-      showRoundTopic(state.topic);
       state.words=[];
       state.found.clear();
       state.selected=[];
