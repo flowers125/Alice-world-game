@@ -1,7 +1,5 @@
 "use strict";
 
-const ROWS = 15;
-const COLS = 20;
 const NORMAL_ROWS = ROWS;
 const NORMAL_COLS = COLS;
 function boardSize() { return state.difficulty === "very-easy" ? { rows: 6, cols: 10 } : { rows: NORMAL_ROWS, cols: NORMAL_COLS }; }
@@ -31,6 +29,8 @@ const PALETTES = [
 const state = {
   language: "vi",
   difficulty: "normal",
+  rows: 15,
+  cols: 20,
   grid: [],
   words: [],
   dictionary: { vi: [], en: [] },
